@@ -79,9 +79,9 @@ var Flickable,
                        (checkBrowser.name === "msie" && checkBrowser.version < 10)
         };
     })(),
-    touchStartEvent = support.touch ? "touchstart" : "mousedown",
-    touchMoveEvent  = support.touch ? "touchmove"  : "mousemove",
-    touchEndEvent   = support.touch ? "touchend"   : "mouseup"
+    touchStartEvent = support.touchEvent ? "touchstart" : "mousedown",
+    touchMoveEvent  = support.touchEvent ? "touchmove"  : "mousemove",
+    touchEndEvent   = support.touchEvent ? "touchend"   : "mouseup"
 ;
 
 // Object.keys shim

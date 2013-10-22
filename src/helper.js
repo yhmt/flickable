@@ -25,13 +25,18 @@ function forEach(ary, callback) {
 }
 
 function hasProp(props) {
+    var ret;
+
     if (props instanceof Array) {
+        ret = false;
+
         forEach(props, function (prop) {
             if (div.style[prop] !== undefined) {
-                return true;
+                ret = true;
             }
         });
-        return false;
+
+        return ret;
     }
     else if (typeof props === "string") {
         return (div.style[props] !== undefined) ? true : false;
@@ -59,12 +64,8 @@ function setStyle(element, styles) {
                 if (style[prefixProp] !== undefined) {
                     stashData[prop]   = prefixProp;
                     style[prefixProp] = val;
-
-                    return true;
                 }
             });
-
-            return false;
         }
     }
 
@@ -86,6 +87,8 @@ function getPage(event, page) {
 }
 
 function getCSSVal(prop) {
+    var ret = null;
+
     if (div.style[prop] !== undefined) {
         return prop;
     }
@@ -94,11 +97,11 @@ function getCSSVal(prop) {
             var prefixProp = ucFirst(prefix) + ucFirst(prop);
 
             if (div.style[prefixProp] !== undefined) {
-                return "-" + prefix + prop;
+                ret = "-" + prefix + prop;
             }
         });
 
-        return null;
+        return ret;
     }
 }
 
@@ -146,23 +149,23 @@ function getChildElementCount(element) {
 function getElementWidth(element) {
     var getStyles    = element.currentStyle || global.getComputedStyle(element, null),
         hasBoxSizing = (function () {
-            var properties = [
-                "-webkit-box-sizing",
-                "-moz-box-sizing",
-                "-o-box-sizing",
-                "-ms-box-sizing",
-                "box-sizing"
-            ];
+            var ret        = false,
+                properties = [
+                    "-webkit-box-sizing",
+                    "-moz-box-sizing",
+                    "-o-box-sizing",
+                    "-ms-box-sizing",
+                    "box-sizing"
+                ];
 
             forEach(properties, function (prop) {
                 if (element.style[prop] !== undefined) {
                     boxSizingVal = getStyles.prop;
-
-                    return true;
+                    ret          = true;
                 }
             });
 
-            return false;
+            return ret;
         })(),
         boxSizingVal, margin, padding, border, width;
 
