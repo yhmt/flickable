@@ -1,0 +1,30 @@
+{
+  "name": "flickable",
+  "title": "Flickable",
+  "description": "",
+  "version": "0.0.1",
+  "url": "http://github.com/yhmt/flickable",
+  "author": "Yuya Hashimoto",
+  "license": "MIT",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/yhmt/flickable.git"
+  },
+  "devDependencies": {
+    "matchdep": "~0.3.0",
+    "grunt": "~0.4.1",
+    "grunt-exec": "~0.4.2",
+    "grunt-este-watch": "~0.1.7",
+    "grunt-contrib-jshint": "~0.6.4",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-uglify": "~0.2.4"
+  }
+}
+
