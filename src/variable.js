@@ -2,7 +2,6 @@ var Flickable,
     NS        = "Flickable",
     div       = document.createElement("div"),
     prefixes  = ["webkit", "moz", "o", "ms"],
-    regexp    = /^(.+[\#\.\s\[\*>:,]|[\[:])/,
     stashData = {},
     support   = (function () {
         var hasTransform3d = hasProp([
@@ -56,7 +55,7 @@ var Flickable,
                 };
             })(),
             platformName = (function () {
-                if (support.touchEvent) {
+                if (support.touchEvent && (isIOS || isAndroid)) {
                     return isIOS ? "ios" : "android";
                 }
                 else {

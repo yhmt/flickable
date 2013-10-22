@@ -3,17 +3,15 @@ Flickable = (function () {
         this.el   = element;
         this.opts = options || {};
 
-        this.opts.autoPlay      = this.otps.autoPlay      || false;
-        this.opts.loop          = this.otps.loop          || (this.opts.autoPlay ? true : false);
+        this.opts.setWidth      = this.opts.setWidth      || false;
+        this.opts.autoPlay      = this.opts.autoPlay      || false;
+        this.opts.loop          = this.opts.loop          || (this.opts.autoPlay ? true : false);
         this.opts.interval      = this.opts.interval      || 6600;
         this.opts.clearInterval = this.opts.clearInterval || this.opts.interval / 2;
         this.opts.transition    = this.opts.transition    || {
             duration       : userAgent.isLegacy ? "200ms" : "330ms",
             timingFunction : "cubic-bezier(0.23, 1, 0.32, 1)"
         };
-        
-        this.distance     = this.opts.distance     || 0;
-        this.currentPoint = this.opts.currentPoint || 0;
 
         this.maxPoint     =
         this.maxX         =
@@ -30,7 +28,7 @@ Flickable = (function () {
         this.moveReady    =
         this.useJsAnimate = false;
 
-        return this;
+        this.refresh();
     }
 
     Flickable.prototype = {
@@ -51,6 +49,17 @@ Flickable = (function () {
             }
         },
         refresh: function () {
+            if (this.opts.setWidth) {
+                this._setWidth();
+            }
+
+            this.maxPoint = this.opts.maxPoint ?
+                                this.opts.maxPoint : getChildElementCount(this.el);
+            this.distance = this.opts.distance ?
+                                this.opts.distance : getElementWidth(this.el) / this.maxPoint;
+            this.maxX     = -this.distance * this.maxPoint;
+
+            this.moveToPoint();
         },
         hasPrev: function () {
             return this.currentPoint > 0;
@@ -74,7 +83,7 @@ Flickable = (function () {
         },
         moveToPoint: function (point, duration) {
             point    = point    || this.currentPoint;
-            duration = duration || this.option.transition.duration;
+            duration = duration || this.opts.transition.duration;
 
             var beforePoint   = this.currentPoint;
             this.currentPoint = point < 0 ?
@@ -95,8 +104,7 @@ Flickable = (function () {
             }
         },
         startAutoPlay: function () {
-            var interval = this.opts.interval,
-                _this;
+            var _this = this, interval = this.opts.interval;
 
             if (!this.opts.autoPlay) {
                 return;
@@ -189,8 +197,7 @@ Flickable = (function () {
             }
         },
         _touchEnd: function (event) {
-            var newPoint,
-                _this = this;
+            var newPoint, _this = this;
 
             this._off(touchMoveEvent, this);
 
@@ -228,7 +235,7 @@ Flickable = (function () {
                 this.el.detachEvent("on" + type, fn);
         },
         _loop: function () {
-            var _this, timerId,
+            var _this = this, timerId,
                 moveToBack        = this.currentPoint <= this.visibleSize,
                 moveToNext        = this.currentPoint >= (this.maxPoint - this.visibleSize),
                 clearInterval     = this.opts.clearInterval,
@@ -243,9 +250,10 @@ Flickable = (function () {
             }
 
             if (hasTransitionEndEvents && moveToBack || moveToNext) {
-                forEach(transitionEndEventNames, function (eventName) {
-                    _this._on(eventName, loopFunc, false);
+                each(transitionEndEventNames, function (idx) {
+                    var eventName = transitionEndEventNames[idx];
 
+                    _this._on(eventName, loopFunc, false);
                     setTimeout(function () {
                         _this._off(eventName, loopFunc);
                     }, clearInterval);
@@ -264,18 +272,16 @@ Flickable = (function () {
 
             if (support.cssAnimation) {
                 return !userAgent.isLegacy ?
-                    setStyle(this.el, {
-                        transform: getTranslate(x)
-                    }) :
+                    setStyle(this.el, { transform: getTranslate(x) }) :
                     this.el.style.left = x + "px";
             }
             else {
                 // TODO
-                this._jsAnimate(x, duration);
+                // this._jsAnimate(x, duration);
             }
         },
-        _setWidth: function (val) {
-            var childElementWidth = val || getElementWidth(getFirstElementChild(this.el)),
+        _setWidth: function (width) {
+            var childElementWidth = width || getElementWidth(getFirstElementChild(this.el)),
                 childElementCount = getChildElementCount(this.el);
 
             this.el.style.width = childElementWidth * childElementCount + "px";
@@ -322,9 +328,12 @@ Flickable = (function () {
                         ;
         }
         else if (isNodeList(selector) ||
-            (typeof selector === "object" && selector.length) ||
-            (Array.isArray(selector) && selector.length && selector[0].nodeType)) {
+                 (typeof selector === "object" && selector.length) ||
+                 (Array.isArray(selector) && selector.length && selector[0].nodeType)) {
             element = selector[0];
+        }
+        else {
+            element = selector;
         }
 
         return new Flickable(element, options, callback);

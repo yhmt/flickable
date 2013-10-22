@@ -16,18 +16,18 @@ function isNodeList(any) {
     return type === "[object NodeList]" || type === "[object HTMLCollection]";
 }
 
-function forEach(list, callback) {
-    var i = 0, l = list.length;
+function each(ary, callback) {
+    var i = 0, l = ary.length;
 
     for (; l; i++, l--) {
-        callback.call(list[i], i);
+        callback.call(ary[i], i);
     }
 }
 
 function hasProp(props) {
     if (props instanceof Array) {
-        forEach(props, function (prop) {
-            if (div.style[prop] !== undefined) {
+        each(props, function (idx) {
+            if (div.style[props[idx]] !== undefined) {
                 return true;
             }
         });
@@ -53,8 +53,8 @@ function setStyle(element, styles) {
             style[prop]     = val;
         }
         else {
-            forEach(prefixes, function (prefix) {
-                var prefixProp = ucFirst(prefix) + ucFirst(prop);
+            each(prefixes, function (idx) {
+                var prefixProp = ucFirst(prefixes[idx]) + ucFirst(prop);
 
                 if (style[prefixProp] !== undefined) {
                     stashData[prop]   = prefixProp;
@@ -90,8 +90,9 @@ function getCSSVal(prop) {
         return prop;
     }
     else {
-        forEach(prefixes, function (prefix) {
-            var prefixProp = ucFirst(prefix) + ucFirst(prop);
+        each(prefixes, function (idx) {
+            var prefix     = prefixes[idx],
+                prefixProp = ucFirst(prefix) + ucFirst(prop);
 
             if (div.style[prefixProp] !== undefined) {
                 return "-" + prefix + prop;
@@ -107,11 +108,14 @@ function getChildElement(element, callback) {
         nodes = element.childNodes;
 
     if (!stashData.childElement) {
-        forEach(nodes, function (node) {
+        each(nodes, function (idx) {
+            var node = nodes[idx];
+
             if (node.nodeType === 1) {
                 ret.push(node);
             }
         });
+
         stashData.childElement = ret;
     }
 
@@ -153,7 +157,9 @@ function getElementWidth(element) {
                 "box-sizing"
             ];
 
-            forEach(properties, function (prop) {
+            each(properties, function (idx) {
+                var prop = properties[idx];
+
                 if (element.style[prop] !== undefined) {
                     boxSizingVal = getStyles.prop;
 
@@ -168,9 +174,12 @@ function getElementWidth(element) {
     function styleParser(props) {
         var ret = 0;
 
-        forEach(props, function (prop) {
-            if (getStyles[prop]) {
-                ret += parseFloat(prop.match(/\d+/)[0]);
+        each(props, function (idx) {
+            var prop  = props[idx],
+                value = getStyles[prop];
+
+            if (value) {
+                ret += parseFloat(value.match(/\d+/)[0]);
             }
         });
 
@@ -178,13 +187,13 @@ function getElementWidth(element) {
     }
 
     if (hasBoxSizing || boxSizingVal !== "content-box") {
-        margin = styleParser("margin-right", "margin-left");
+        margin = styleParser(["margin-right", "margin-left"]);
         width  = element.scrollWidth + margin;
     }
     else {
-        margin  = styleParser("margin-right",       "margin-left");
-        padding = styleParser("padding-right",      "padding-left");
-        border  = styleParser("border-right-width", "border-left-width");
+        margin  = styleParser(["margin-right",       "margin-left"]);
+        padding = styleParser(["padding-right",      "padding-left"]);
+        border  = styleParser(["border-right-width", "border-left-width"]);
         width   = element.scrollWidth + margin + padding + border;
     }
 
