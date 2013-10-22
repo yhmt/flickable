@@ -1,10 +1,10 @@
 var Flickable,
-    NS       = "Flickable",
-    div      = document.createElement("div"),
-    prefixes = ["webkit", "moz", "o", "ms"],
-    regexp   = /^(.+[\#\.\s\[\*>:,]|[\[:])/,
-    saveProp = {},
-    support  = (function () {
+    NS        = "Flickable",
+    div       = document.createElement("div"),
+    prefixes  = ["webkit", "moz", "o", "ms"],
+    regexp    = /^(.+[\#\.\s\[\*>:,]|[\[:])/,
+    stashData = {},
+    support   = (function () {
         var hasTransform3d = hasProp([
                 "perspectiveProperty",
                 "WebkitPerspective",

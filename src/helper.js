@@ -43,21 +43,21 @@ function setStyle(element, styles) {
         styleAry = uupaaLooper(styles);
 
     function setAttr(style, prop, val) {
-        var hasSaveProp = saveProp[prop];
+        var hasSaveProp = stashData[prop];
 
         if (hasSaveProp) {
             style[hasSaveProp] = val;
         }
         else if (style[prop] !== undefined) {
-            saveProp[prop] = prop;
-            style[prop]    = val;
+            stashData[prop] = prop;
+            style[prop]     = val;
         }
         else {
             forEach(prefixes, function (prefix) {
                 var prefixProp = ucFirst(prefix) + ucFirst(prop);
 
                 if (style[prefixProp] !== undefined) {
-                    saveProp[prop]    = prefixProp;
+                    stashData[prop]   = prefixProp;
                     style[prefixProp] = val;
 
                     return true;
@@ -100,6 +100,46 @@ function getCSSVal(prop) {
 
         return null;
     }
+}
+
+function getChildElement(element, callback) {
+    var ret   = [],
+        nodes = element.childNodes;
+
+    if (!stashData.childElement) {
+        forEach(nodes, function (node) {
+            if (node.nodeType === 1) {
+                ret.push(node);
+            }
+        });
+        stashData.childElement = ret;
+    }
+
+    return callback ? callback() : stashData.childElement;
+}
+
+function getFirstElementChild(element) {
+    return element.firstElementChild ?
+        element.firstElementChild :
+        getChildElement(element, function () {
+            return stashData.childElement[0];
+        });
+}
+
+function getLastElementChild(element) {
+    return element.lastElementChild ?
+        element.lastElementChild :
+        getChildElement(element, function () {
+            return stashData.childElement[stashData.childElement.length - 1];
+        });
+}
+
+function getChildElementCount(element) {
+    return element.childElementCount ?
+        element.childElementCount :
+        getChildElement(element, function () {
+            return stashData.childElement.length;
+        });
 }
 
 function getElementWidth(element) {
@@ -165,23 +205,19 @@ function getTransitionEndEventNames() {
 
     switch (browserName) {
         case "webkit":
-            return [transitionendNames[0], transitionendNames[3]];
-            break;
+            return [eventNames[0], eventNames[3]];
         case "firefox":
-            return [transitionendNames[1], transitionendNames[3]];
+            return [eventNames[1], eventNames[3]];
         case "opera":
-            return [transitionendNames[2], transitionendNames[3]];
-            break;
+            return [eventNames[2], eventNames[3]];
         case "ie":
-            return [transitionendNames[3]];
-            break;
+            return [eventNames[3]];
         default:
             return [];
-            break;
     }
 }
 
-function triggerEvent (element, type, bubbles, cancelable) {
+function triggerEvent(element, type, bubbles, cancelable) {
     var event;
 
     if (support.createEvent) {

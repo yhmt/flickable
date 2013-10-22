@@ -61,7 +61,7 @@ module.exports = (grunt) ->
           "latedef"
           "undef"
           # "unused"
-          "trailing"
+          # "trailing" # 行末のホワイトスペースを禁止
           "browser"
           "devel"
         ]

@@ -1,12 +1,10 @@
 Flickable = (function () {
     function Flickable(element, options, callback) {
-        this.el = element;
+        this.el   = element;
+        this.opts = options || {};
 
-        this.opts  = options || {};
-
-        this.opts.autoPlay = this.otps.autoPlay || false;
-        this.opts.loop     = this.otps.loop     || (this.opts.autoPlay ? true : false);
-
+        this.opts.autoPlay      = this.otps.autoPlay      || false;
+        this.opts.loop          = this.otps.loop          || (this.opts.autoPlay ? true : false);
         this.opts.interval      = this.opts.interval      || 6600;
         this.opts.clearInterval = this.opts.clearInterval || this.opts.interval / 2;
         this.opts.transition    = this.opts.transition    || {
@@ -17,19 +15,20 @@ Flickable = (function () {
         this.distance     = this.opts.distance     || 0;
         this.currentPoint = this.opts.currentPoint || 0;
 
-        this.maxPoint    =
-        this.maxX        =
-        this.currentX    =
-        this.startPageX  = 
-        this.startPageY  = 
-        this.basePageX   = 
-        this.directionX  = 
-        this.visibleSize = 0;
+        this.maxPoint     =
+        this.maxX         =
+        this.currentX     =
+        this.startPageX   = 
+        this.startPageY   = 
+        this.basePageX    = 
+        this.directionX   = 
+        this.visibleSize  = 0;
 
-        this.timeId      = null;
+        this.timeId       = null;
 
-        this.scrolling   =
-        this.moveReady   = false;
+        this.scrolling    =
+        this.moveReady    =
+        this.useJsAnimate = false;
 
         return this;
     }
@@ -122,13 +121,95 @@ Flickable = (function () {
             this._off(touchStartEvent, this);
         },
         _touchStart: function (event) {
+            this.scrolling  = true;
+            this.moveReady  = false;
 
+            this.startPageX = getPage(event, "pageX");
+            this.startPageY = getPage(event, "pageY");
+            this.basePageX  = this.startPageX;
+            this.directionX = 0;
+
+            this._on(touchMoveEvent, this, false);
+
+            if (!support.touchEvent) {
+                event.preventDefault();
+            }
+
+            return support.cssAnimation ?
+                setStyle(this.el, { transitionDuration: "0ms" }) :
+                this.useJsAnimate = false;
         },
         _touchMove: function (event) {
+            var pageX = getPage(event, "pageX"),
+                pageY = getPage(event, "pageY"),
+                deltaX, deltaY, distX, newX;
 
+            if (this.opts.autoPlay) {
+                this.clearAutoPlay();
+            }
+
+            if (this.moveReady) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                distX = pageX - this.basePageX;
+                newX  = this.currentX + distX;
+
+                if (newX >= 0 || newX < this.maxX) {
+                    newX = Math.round(this.currentX + distX / 3);
+                }
+
+                this._setX(newX);
+                this.directionX = distX === 0 ?
+                                       this.directionX :
+                                   distX > 0 ?
+                                       -1 : 1;
+            }
+            else {
+                deltaX = Math.abs(pageX - this.startPageX);
+                deltaY = Math.abs(pageY - this.startPageY);
+
+                if (deltaX > 5) {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    this.moveReady = true;
+                    this._on("click", this, true);
+                }
+                else if (deltaY > 5) {
+                    this.scrolling = false;
+                }
+
+            }
+
+            this.basePageX = pageX;
+
+            if (this.opts.autoPlay) {
+                this.startAutoPlay();
+            }
         },
         _touchEnd: function (event) {
+            var newPoint,
+                _this = this;
 
+            this._off(touchMoveEvent, this);
+
+            if (!this.scrolling) {
+                return;
+            }
+
+            newPoint = -this.currentX / this.distance;
+            newPoint = this.directionX > 0 ?
+                           Math.ceil(newPoint)  :
+                       this.directionX < 0 ?
+                           Math.floor(newPoint) :
+                           Math.round(newPoint)
+                       ;
+
+            this.moveToPoint(newPoint);
+            setTimeout(function () {
+                _this._off("click", _this);
+            }, 200);
         },
         _click: function (event) {
             event.stopPropagation();
@@ -148,15 +229,14 @@ Flickable = (function () {
         },
         _loop: function () {
             var _this, timerId,
+                moveToBack        = this.currentPoint <= this.visibleSize,
+                moveToNext        = this.currentPoint >= (this.maxPoint - this.visibleSize),
                 clearInterval     = this.opts.clearInterval,
-                childElementCount = this.childElementCount,
+                childElementCount = getChildElementCount(this.el),
                 transitionEndEventNames = getTransitionEndEventNames(),
                 hasTransitionEndEvents  = transitionEndEventNames.length;
 
             function loopFunc() {
-                var moveToBack = this.currentPoint <= this.visibleSize,
-                    moveToNext = this.currentPoint >= (this.maxPoint - this.visibleSize);
-
                 return moveToBack ?
                     _this.moveToPoint(_this.currentPoint + childElementCount, 0) :
                     _this.moveToPoint(_this.currentPoint - childElementCount, 0);
@@ -194,16 +274,35 @@ Flickable = (function () {
                 this._jsAnimate(x, duration);
             }
         },
-        _setWidth: function (element, width) {
-            width = width || getElementWidth(element);
+        _setWidth: function (val) {
+            var childElementWidth = val || getElementWidth(getFirstElementChild(this.el)),
+                childElementCount = getChildElementCount(this.el);
 
-            element.style.width = width + "px";
+            this.el.style.width = childElementWidth * childElementCount + "px";
         },
-        _cloneNode: function () {
-            if (!this.opts.loop) {
-                return;
+        _cloneElement: function () {
+            var _this = this,
+                childElement       = getChildElement(this.el),
+                childElementWidth  = getElementWidth(childElement[0]),
+                parentElementWidth = getElementWidth(this.el.parentNode);
+
+            function insertElement(start, end) {
+                var firstElement = childElement[start],
+                    lastElement  = childElement[childElement.length - end];
+
+                _this.el.insertBefore(lastElement.cloneNode(true), childElement[0]);
+                _this.el.appendChild(firstElement.cloneNode(true));
             }
 
+            this.visibleSize = parseInt(parentElementWidth / childElementWidth, 10) + 1;
+
+            return (function (i, l) {
+                for (; l; i++, i--) {
+                    insertElement(i, _this.visibleSize - i);
+                }
+
+                _this.currentPoint = _this.visibleSize;
+            })(0, this.visibleSize);
         }
     };
 
