@@ -16,18 +16,18 @@ function isNodeList(any) {
     return type === "[object NodeList]" || type === "[object HTMLCollection]";
 }
 
-function each(ary, callback) {
+function forEach(ary, callback) {
     var i = 0, l = ary.length;
 
     for (; l; i++, l--) {
-        callback.call(ary[i], i);
+        callback.call(ary[i], ary[i]);
     }
 }
 
 function hasProp(props) {
     if (props instanceof Array) {
-        each(props, function (idx) {
-            if (div.style[props[idx]] !== undefined) {
+        forEach(props, function (prop) {
+            if (div.style[prop] !== undefined) {
                 return true;
             }
         });
@@ -53,8 +53,8 @@ function setStyle(element, styles) {
             style[prop]     = val;
         }
         else {
-            each(prefixes, function (idx) {
-                var prefixProp = ucFirst(prefixes[idx]) + ucFirst(prop);
+            forEach(prefixes, function (prefix) {
+                var prefixProp = ucFirst(prefix) + ucFirst(prop);
 
                 if (style[prefixProp] !== undefined) {
                     stashData[prop]   = prefixProp;
@@ -90,9 +90,8 @@ function getCSSVal(prop) {
         return prop;
     }
     else {
-        each(prefixes, function (idx) {
-            var prefix     = prefixes[idx],
-                prefixProp = ucFirst(prefix) + ucFirst(prop);
+        forEach(prefixes, function (prefix) {
+            var prefixProp = ucFirst(prefix) + ucFirst(prop);
 
             if (div.style[prefixProp] !== undefined) {
                 return "-" + prefix + prop;
@@ -108,9 +107,7 @@ function getChildElement(element, callback) {
         nodes = element.childNodes;
 
     if (!stashData.childElement) {
-        each(nodes, function (idx) {
-            var node = nodes[idx];
-
+        forEach(nodes, function (node) {
             if (node.nodeType === 1) {
                 ret.push(node);
             }
@@ -157,9 +154,7 @@ function getElementWidth(element) {
                 "box-sizing"
             ];
 
-            each(properties, function (idx) {
-                var prop = properties[idx];
-
+            forEach(properties, function (prop) {
                 if (element.style[prop] !== undefined) {
                     boxSizingVal = getStyles.prop;
 
@@ -174,9 +169,8 @@ function getElementWidth(element) {
     function styleParser(props) {
         var ret = 0;
 
-        each(props, function (idx) {
-            var prop  = props[idx],
-                value = getStyles[prop];
+        forEach(props, function (prop) {
+            var value = getStyles[prop];
 
             if (value) {
                 ret += parseFloat(value.match(/\d+/)[0]);

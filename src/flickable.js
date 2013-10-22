@@ -35,17 +35,13 @@ Flickable = (function () {
         handleEvent: function (event) {
             switch (event.type) {
                 case touchStartEvent:
-                    this._touchStart(event);
-                    break;
+                    return this._touchStart(event);
                 case touchMoveEvent:
-                    this._touchMove(event);
-                    break;
+                    return this._touchMove(event);
                 case touchEndEvent:
-                    this._touchEnd(event);
-                    break;
+                    return this._touchEnd(event);
                 case "click":
-                    this._click(event);
-                    break;
+                    return this._click(event);
             }
         },
         refresh: function () {
@@ -58,6 +54,10 @@ Flickable = (function () {
             this.distance = this.opts.distance ?
                                 this.opts.distance : getElementWidth(this.el) / this.maxPoint;
             this.maxX     = -this.distance * this.maxPoint;
+
+            console.log(this.maxPoint);
+            console.log(this.distance);
+            console.log(this.maxX);
 
             this.moveToPoint();
         },
@@ -250,9 +250,7 @@ Flickable = (function () {
             }
 
             if (hasTransitionEndEvents && moveToBack || moveToNext) {
-                each(transitionEndEventNames, function (idx) {
-                    var eventName = transitionEndEventNames[idx];
-
+                forEach(transitionEndEventNames, function (eventName) {
                     _this._on(eventName, loopFunc, false);
                     setTimeout(function () {
                         _this._off(eventName, loopFunc);
