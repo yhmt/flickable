@@ -31,6 +31,7 @@ var Flickable,
             touchEvent          : "ontouchstart"        in global,
             addEventListener    : "addEventListener"    in global,
             removeEventListener : "removeEventListener" in global,
+            orientationchange   : "onorientationchange" in global,
             createEvent         : "createEvent"         in document,
             transform3d         : hasTransform3d,
             transform           : hasTransform,
@@ -75,13 +76,14 @@ var Flickable,
                 os      : platformVersion,
                 browser : checkBrowser.version
             },
-            isLegacy : (isAndroid && platformVersion < 3) ||
+            isLegacy : (isAndroid && platformVersion < 4) ||
                        (checkBrowser.name === "msie" && checkBrowser.version < 10)
         };
     })(),
-    touchStartEvent = support.touchEvent ? "touchstart" : "mousedown",
-    touchMoveEvent  = support.touchEvent ? "touchmove"  : "mousemove",
-    touchEndEvent   = support.touchEvent ? "touchend"   : "mouseup"
+    touchStartEvent        = support.touchEvent        ? "touchstart"        : "mousedown",
+    touchMoveEvent         = support.touchEvent        ? "touchmove"         : "mousemove",
+    touchEndEvent          = support.touchEvent        ? "touchend"          : "mouseup",
+    orientationChangeEvent = support.orientationchange ? "orientationchange" : "resize"
 ;
 
 // Object.keys shim

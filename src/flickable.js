@@ -1,6 +1,9 @@
 Flickable = (function () {
     function Flickable(element, options, callback) {
-        this.el   = element;
+        var _this = this, initStyle;
+
+        this.el   = DOMSelector(element);
+        this.data = {};
         this.opts = options || {};
 
         this.opts.setWidth      = this.opts.setWidth      || true;
@@ -8,12 +11,12 @@ Flickable = (function () {
         this.opts.loop          = this.opts.loop          || (this.opts.autoPlay ? true : false);
         this.opts.interval      = this.opts.interval      || 6600;
         this.opts.clearInterval = this.opts.clearInterval || this.opts.interval / 2;
+        this.opts.disableTouch  = this.opts.disableTouch  || false;
         this.opts.transition    = this.opts.transition    || {
             duration       : userAgent.isLegacy ? "200ms" : "330ms",
             timingFunction : "cubic-bezier(0.23, 1, 0.32, 1)"
         };
 
-        this.maxPoint     =
         this.maxX         =
         this.currentPoint =
         this.currentX     =
@@ -29,40 +32,93 @@ Flickable = (function () {
         this.moveReady    =
         this.useJsAnimate = false;
 
-        this.refresh();
+        if (support.cssAnimation && !userAgent.isLegacy) {
+            initStyle = {
+                transitionProperty       : getCSSVal("transform"),
+                transitionDuration       : "0ms",
+                transitionTimingFunction : this.opts.transition.timingFunction,
+                transform                : getTranslate(0)
+            };
+        }
+        else if (support.cssAnimation && userAgent.isLegacy) {
+            initStyle = {
+                transitionProperty       : getCSSVal("transform"),
+                transitionDuration       : "0ms",
+                transitionTimingFunction : this.opts.transition.timingFunction,
+                transform                : getTranslate(0)
+            };
+        }
+        else {
+            initStyle = {
+                position : "relative",
+                left     : "0px"
+            };
+        }
 
-        this._on(touchStartEvent, this, false);
-        // this._on(touchMoveEvent,  this, false);
-        // this._on(touchEndEvent,   this, false);
+        setStyle(this.el, initStyle);
+
+        addListener(this.el, touchStartEvent, this);
+        addListener(window, orientationChangeEvent, function () {
+            // TODO: orientationchange なら debounce
+            //       resize なら throttle で間引く
+            _this.refresh();
+        });
+
+        if (this.opts.loop) {
+            this._cloneElement();
+        }
+        if (callback) {
+            callback();
+        }
+
+        this.refresh();
     }
 
     Flickable.prototype = {
         handleEvent: function (event) {
             switch (event.type) {
-                case touchStartEvent:
-                    return this._touchStart(event);
-                case touchMoveEvent:
-                    return this._touchMove(event);
-                case touchEndEvent:
-                    return this._touchEnd(event);
-                case "click":
-                    return this._click(event);
+            case touchStartEvent:
+                return this._touchStart(event);
+            case touchMoveEvent:
+                return this._touchMove(event);
+            case touchEndEvent:
+                return this._touchEnd(event);
+            case "click":
+                return this._click(event);
             }
         },
         refresh: function () {
+            console.log("refresh");
+
             if (this.opts.setWidth) {
                 this._setWidth();
             }
 
             this.maxPoint = this.opts.maxPoint ?
-                                this.opts.maxPoint : getChildElementCount(this.el);
+                                this.opts.maxPoint :
+                                getChildElementCount(this.el) - 1;
+                                   // getChildElementCount(this.el);
+                                   // getChildElementCount(this.el) - Math.round(this.visibleSize / 2);
+                                   // childElement.length;
             this.distance = this.opts.distance ?
-                                this.opts.distance : getElementWidth(this.el) / this.maxPoint;
+                                this.opts.distance :
+                            this.maxPoint < 0  ?
+                                0 : getElementWidth(getFirstElementChild(this.el), true)
+                            ;
             this.maxX     = -this.distance * this.maxPoint;
 
-            // console.log(this.maxPoint);
-            // console.log(this.distance);
-            // console.log(this.maxX);
+            // this.visibleSize = Math.round(parentElementWidth / childElementWidth);
+
+            // console.log("this.distance: %s", this.distance);
+            // console.log("this.currentPoint: %s", this.currentPoint);
+            // console.log("this.currentX: %s", this.currentX);
+            // console.log("this.maxX: %s", this.maxX);
+            // console.log("this.maxPoint: %s", this.maxPoint);
+            // console.log("this.startPageX: %s", this.startPageX);
+            // console.log("this.startPageY: %s", this.startPageY);
+            // console.log("this.basePageX: %s", this.basePageX);
+            // console.log("this.directionX: %s", this.directionX);
+            // console.log("this.visibleSize: %s", this.visibleSize);
 
             this.moveToPoint();
         },
@@ -87,11 +143,8 @@ Flickable = (function () {
             this.moveToPoint(this.currentPoint + 1);
         },
         moveToPoint: function (point, duration) {
-            point    = point    || this.currentPoint;
+            point    = point === undefined ? this.currentPoint : point; 
             duration = duration || this.opts.transition.duration;
-
-            // console.log(point);
-            // console.log(duration);
 
             var beforePoint   = this.currentPoint;
             this.currentPoint = point < 0 ?
@@ -109,11 +162,13 @@ Flickable = (function () {
                 this.useJsAnimate = true;
             }
 
+            // console.log("this.currentPoint: %s", this.currentPoint);
+            // console.log("this.maxPoint: %s", this.maxPoint);
+
             this._setX(- this.currentPoint * this.distance, duration);
 
             if (beforePoint !== this.currentPoint) {
-                console.log("beforePoint !== this.currentPoint");
-                triggerEvent(this.el, "flpointmove", true, false);
+                triggerEvent(document, "flpointmove", true, false);
 
                 if (this.opts.loop) {
                     this._loop();
@@ -143,38 +198,45 @@ Flickable = (function () {
                 this.clearAutoPlay();
             }
 
-            this._off(touchStartEvent, this);
+            removeListener(this.el, touchStartEvent, this);
         },
         _touchStart: function (event) {
-            console.log("_touchStart");
+            if (this.opts.disableTouch) {
+                return;
+            }
 
-            this._on(touchMoveEvent, this, false);
-            // TODO: EventListener
-            document.addEventListener(touchEndEvent, this, false);
-
-            this.scrolling  = true;
-            this.moveReady  = false;
-
-            this.startPageX = getPage(event, "pageX");
-            this.startPageY = getPage(event, "pageY");
-            this.basePageX  = this.startPageX;
-            this.directionX = 0;
-
+            addListener(this.el, touchMoveEvent, this);
+            addListener(document, touchEndEvent, this);
 
             if (!support.touchEvent) {
                 event.preventDefault();
             }
 
-            return support.cssAnimation ?
-                setStyle(this.el, { transitionDuration: "0ms" }) :
+            if (support.cssAnimation) {
+                setStyle(this.el, { transitionDuration: "0ms" });
+            }
+            else {
                 this.useJsAnimate = false;
+            }
+
+            this.scrolling  = true;
+            this.moveReady  = false;
+            this.startPageX = getPage(event, "pageX");
+            this.startPageY = getPage(event, "pageY");
+            this.basePageX  = this.startPageX;
+            this.directionX = 0;
+
+            triggerEvent(this.el, "fltouchstart", true, false);
         },
         _touchMove: function (event) {
-            // console.log("_touchMove");
+            if (!this.scrolling) {
+                return;
+            }
 
-            var pageX = getPage(event, "pageX"),
+            var _this = this,
+                pageX = getPage(event, "pageX"),
                 pageY = getPage(event, "pageY"),
-                deltaX, deltaY, distX, newX;
+                deltaX, deltaY, distX, newX, isPrevent;
 
             if (this.opts.autoPlay) {
                 this.clearAutoPlay();
@@ -191,11 +253,30 @@ Flickable = (function () {
                     newX = Math.round(this.currentX + distX / 3);
                 }
 
-                this._setX(newX);
                 this.directionX = distX === 0 ?
-                                       this.directionX :
-                                   distX > 0 ?
-                                       -1 : 1;
+                                      this.directionX :
+                                  distX > 0 ?
+                                      -1 : 1
+                                  ;
+
+                isPrevent = !triggerEvent(this.el, "fltouchmove", true, true, {
+                    delta     : distX,
+                    direction : _this.directionX
+                });
+
+                // TODO: fix
+                if (isPrevent) {
+                    // this._touchAfter({
+                    //     moved         : false,
+                    //     originalPoint : _this.currentPoint,
+                    //     newPoint      : _this.currentPoint,
+                    //     cancelled     : true
+                    // });
+                    this._setX(newX);
+                }
+                else {
+                    this._setX(newX);
+                }
             }
             else {
                 deltaX = Math.abs(pageX - this.startPageX);
@@ -206,12 +287,11 @@ Flickable = (function () {
                     event.stopPropagation();
 
                     this.moveReady = true;
-                    this._on("click", this, true);
+                    addListener(this.el, "click", this, true);
                 }
                 else if (deltaY > 5) {
                     this.scrolling = false;
                 }
-
             }
 
             this.basePageX = pageX;
@@ -221,19 +301,18 @@ Flickable = (function () {
             }
         },
         _touchEnd: function (event) {
-            console.log("_touchEnd");
-            var newPoint, _this = this;
+            var _this = this, newPoint;
 
-            this._off(touchMoveEvent, this);
-            // TODO: EventListener
-            document.removeEventListener(touchEndEvent, this, false);
+            removeListener(this.el, touchMoveEvent, this);
+            removeListener(document, touchEndEvent, this);
 
             if (!this.scrolling) {
                 return;
             }
 
+            console.log("_touchEnd");
+
             newPoint = -this.currentX / this.distance;
-            console.log(newPoint);
             newPoint = this.directionX > 0 ?
                            Math.ceil(newPoint)  :
                        this.directionX < 0 ?
@@ -241,92 +320,78 @@ Flickable = (function () {
                            Math.round(newPoint)
                        ;
 
-            console.log(newPoint);
+            if (newPoint < 0) {
+                newPoint = 0;
+            }
+            else if (newPoint > this.maxPoint) {
+                newPoint = this.maxPoint;
+            }
 
+            console.log("this.distance     : %s", this.distance);
+            console.log("this.currentX     : %s", this.currentX);
+            console.log("this.directionX   : %s", this.directionX);
+            console.log("this.currentPoint : %s", this.currentPoint);
+            console.log("this.maxPoint     : %s", this.maxPoint);
+            console.log("newPoint          : %s", newPoint);
+
+            this._touchAfter({
+                moved         : newPoint !== _this.currentPoint,
+                originalPoint : _this.currentPoint,
+                newPoint      : newPoint,
+                cancelled     : false
+            });
+
+            console.log("newPoint: %s", newPoint);
             this.moveToPoint(newPoint);
-            setTimeout(function () {
-                _this._off("click", _this);
-            }, 200);
         },
         _click: function (event) {
             event.stopPropagation();
             event.preventDefault();
         },
-        _on: function (type, fn, capture) {
-            capture = capture || false;
+        _touchAfter: function (params) {
+            var _this = this;
 
-            return support.addEventListener ?
-                this.el.addEventListener(type, fn, capture) :
-                this.el.attachEvent("on" + type, fn);
-        },
-        _off: function (type, fn) {
-            return support.removeEventListener ?
-                this.el.removeEventListener(type, fn) :
-                this.el.detachEvent("on" + type, fn);
-        },
-        _loop: function () {
-            var _this = this, timerId,
-                moveToBack        = this.currentPoint <= this.visibleSize,
-                moveToNext        = this.currentPoint >= (this.maxPoint - this.visibleSize),
-                clearInterval     = this.opts.clearInterval,
-                childElementCount = getChildElementCount(this.el),
-                transitionEndEventNames = getTransitionEndEventNames(),
-                hasTransitionEndEvents  = transitionEndEventNames.length;
+            this.scrolling = false;
+            this.moveReady = false;
 
-            function loopFunc() {
-                return moveToBack ?
-                    _this.moveToPoint(_this.currentPoint + childElementCount, 0) :
-                    _this.moveToPoint(_this.currentPoint - childElementCount, 0);
-            }
+            setTimeout(function () {
+                removeListener(_this.el, "click", _this, true);
+            }, 200);
 
-            if (hasTransitionEndEvents && moveToBack || moveToNext) {
-                forEach(transitionEndEventNames, function (eventName) {
-                    _this._on(eventName, loopFunc, false);
-                    setTimeout(function () {
-                        _this._off(eventName, loopFunc);
-                    }, clearInterval);
-                });
-            }
-            // TODO: イミフ
-            // else {
-            //     timeId = loopFunc;
-            // }
+            console.log("_touchAfter");
+
+            triggerEvent(this.el, "fltouchend", true, false, params);
         },
         _setX: function (x, duration) {
             x        = parseInt(x, 10);
             duration = duration || this.opts.duration;
 
             this.currentX = x;
-            // console.log("x: " + x);
-            // console.log("currentX: " + this.currentX);
 
-            if (support.cssAnimation) {
-                // return !userAgent.isLegacy ?
-                //     setStyle(this.el, { transform: getTranslate(x) }) :
-                //     this.el.style.left = x + "px";
-                if (!userAgent.isLegacy) {
-                    setStyle(this.el, { transform: getTranslate(x) });
-                }
-                else {
-                    this.el.style.left = x + "px";
-                }
+            if (support.cssAnimation && !userAgent.isLegacy) {
+                this.el.style[stashData.transform] = getTranslate(x);
+            }
+            else if (this.useJsAnimate) {
+                this._animate(x, duration);
             }
             else {
-                // TODO
-                // this._jsAnimate(x, duration);
+                this.el.style.left = x + "px";
             }
         },
         _setWidth: function (width) {
-            var childElementWidth = width || getElementWidth(getFirstElementChild(this.el)),
+            var childElementWidth = width || getElementWidth(getFirstElementChild(this.el), true),
                 childElementCount = getChildElementCount(this.el);
+
+            console.log("childElementWidth: %s", childElementWidth);
+            console.log("childElementCount: %s", childElementCount);
 
             this.el.style.width = childElementWidth * childElementCount + "px";
         },
         _cloneElement: function () {
-            var _this = this,
+            var _this              = this,
                 childElement       = getChildElement(this.el),
-                childElementWidth  = getElementWidth(childElement[0]),
-                parentElementWidth = getElementWidth(this.el.parentNode);
+                childElementWidth  = getElementWidth(childElement[0], true),
+                parentElementWidth = getElementWidth(this.el.parentNode, false, "scrollWidth");
 
             function insertElement(start, end) {
                 var firstElement = childElement[start],
@@ -336,44 +401,78 @@ Flickable = (function () {
                 _this.el.appendChild(firstElement.cloneNode(true));
             }
 
-            this.visibleSize = parseInt(parentElementWidth / childElementWidth, 10) + 1;
+            this.visibleSize = Math.round(parentElementWidth / childElementWidth);
+
+            console.log("this.el.parentNode: %s", this.el.parentNode);
+            console.log("parentElementWidth: %s", parentElementWidth);
+            console.log("childElementWidth: %s", childElementWidth);
+            console.log("this.visibleSize: %s", this.visibleSize);
 
             return (function (i, l) {
-                for (; l; i++, i--) {
+                for (; l; i++, l--) {
                     insertElement(i, _this.visibleSize - i);
                 }
 
                 _this.currentPoint = _this.visibleSize;
             })(0, this.visibleSize);
+        },
+        _loop: function () {
+            var _this             = this,
+                moveToBack        = this.currentPoint <= this.visibleSize,
+                moveToNext        = this.currentPoint >= (this.maxPoint - this.visibleSize),
+                clearInterval     = this.opts.clearInterval,
+                childElementCount = getChildElementCount(this.el),
+                transitionEndEventNames = getTransitionEndEventNames(),
+                hasTransitionEndEvents  = transitionEndEventNames.length,
+                timerId;
+
+            function loopFunc() {
+                return moveToBack ?
+                    _this.moveToPoint(_this.currentPoint + childElementCount, 0) :
+                    _this.moveToPoint(_this.currentPoint - childElementCount, 0);
+            }
+
+            if (hasTransitionEndEvents && moveToBack || moveToNext) {
+                forEach(transitionEndEventNames, function (eventName) {
+                    addListener(_this.el, eventName, loopFunc, false);
+                    setTimeout(function () {
+                        removeListener(_this.el, eventName, loopFunc, false);
+                    }, clearInterval);
+                });
+            }
+            // TODO: イミフ
+            // else {
+            //     timeId = loopFunc;
+            // }
+        },
+        _animate: function (x, transitionDuration) {
+            var _this    = this,
+                begin    = +new Date(),
+                from     = parseInt(_this.el.style.left, 10),
+                to       = x,
+                duration = parseInt(transitionDuration, 10),
+                easing   = function (time, duration) {
+                    return -(time /= duration) * (time - 2);
+                },
+                timer    = setInterval(function () {
+                    var time = new Date() - begin,
+                        pos, now;
+
+                    if (time > duration) {
+                        clearInterval(timer);
+                        now = to;
+                    }
+                    else {
+                        pos = easing(time, duration);
+                        now = pos * (to - from) + from;
+                    }
+
+                    _this.el.style.left = now + "px";
+                }, 10)
+            ;
+
         }
     };
 
-    function initialize(selector, options, callback) {
-        var regexp  = /^(.+[\#\.\s\[\*>:,]|[\[:])/,
-            element, formatted;
-
-        if (typeof selector === "string") {
-            formatted = selector.substring(1, selector.length);
-            element   = regexp.test(selector) ?
-                            document.querySelector(selector) :
-                        selector[0] === "#" ?
-                            document.getElementById(formatted) :
-                        selector[0] === "." ?
-                            document.getElementsByClassName(formatted)[0] :
-                            document.getElementsByTagName(selector)[0]
-                        ;
-        }
-        else if (isNodeList(selector) ||
-                 (typeof selector === "object" && selector.length) ||
-                 (Array.isArray(selector) && selector.length && selector[0].nodeType)) {
-            element = selector[0];
-        }
-        else {
-            element = selector;
-        }
-
-        return new Flickable(element, options, callback);
-    }
-
-    return initialize;
+    return Flickable;
 })();

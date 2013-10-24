@@ -1,15 +1,3 @@
-function uupaaLooper(hash) {
-    var ret = [],
-        ary = Object.keys(hash),
-        i   = 0, l = ary.length;
-
-    for (; l; i++, l--) {
-        ret.push(ary[i]);
-    }
-
-    return ret;
-}
-
 function isNodeList(any) {
     var type = Object.prototype.toString.call(any);
 
@@ -22,6 +10,45 @@ function forEach(ary, callback) {
     for (; l; i++, l--) {
         callback.call(ary[i], ary[i]);
     }
+}
+
+function uupaaLooper(hash) {
+    var ret = [],
+        ary = Object.keys(hash),
+        i   = 0, l = ary.length;
+
+    for (; l; i++, l--) {
+        ret.push(ary[i]);
+    }
+
+    return ret;
+}
+
+function DOMSelector(selector) {
+    var regexp  = /^(.+[\#\.\s\[\*>:,]|[\[:])/,
+        element, formatted;
+
+    if (typeof selector === "string") {
+        formatted = selector.substring(1, selector.length);
+        element   = regexp.test(selector) ?
+                        document.querySelector(selector) :
+                    selector[0] === "#" ?
+                        document.getElementById(formatted) :
+                    selector[0] === "." ?
+                        document.getElementsByClassName(formatted)[0] :
+                        document.getElementsByTagName(selector)[0]
+                    ;
+    }
+    else if (isNodeList(selector) ||
+             (typeof selector === "object" && selector.length) ||
+             (Array.isArray(selector) && selector.length && selector[0].nodeType)) {
+        element = selector[0];
+    }
+    else {
+        element = selector;
+    }
+
+    return element;
 }
 
 function hasProp(props) {
@@ -146,28 +173,32 @@ function getChildElementCount(element) {
         });
 }
 
-function getElementWidth(element) {
+function getElementWidth(element, incMargin, getType) {
+    incMargin = incMargin || false;
+    getType   = getType   || "offsetWidth";
+
     var getStyles    = element.currentStyle || global.getComputedStyle(element, null),
-        hasBoxSizing = (function () {
-            var ret        = false,
-                properties = [
-                    "-webkit-box-sizing",
-                    "-moz-box-sizing",
-                    "-o-box-sizing",
-                    "-ms-box-sizing",
-                    "box-sizing"
-                ];
+        // hasBoxSizing = (function () {
+        //     var ret        = false,
+        //         properties = [
+        //             "-webkit-box-sizing",
+        //             "-moz-box-sizing",
+        //             "-o-box-sizing",
+        //             "-ms-box-sizing",
+        //             "box-sizing"
+        //         ];
 
-            forEach(properties, function (prop) {
-                if (element.style[prop] !== undefined) {
-                    boxSizingVal = getStyles.prop;
-                    ret          = true;
-                }
-            });
+        //     forEach(properties, function (prop) {
+        //         if (element.style[prop] !== undefined) {
+        //             boxSizingVal = getStyles.prop;
+        //             ret          = true;
+        //         }
+        //     });
 
-            return ret;
-        })(),
-        boxSizingVal, margin, padding, border, width;
+        //     return ret;
+        // })(),
+        // boxSizingVal, margin, padding, border, width;
+        margin, width;
 
     function styleParser(props) {
         var ret = 0;
@@ -176,23 +207,26 @@ function getElementWidth(element) {
             var value = getStyles[prop];
 
             if (value) {
-                ret += parseFloat(value.match(/\d+/)[0]);
+                ret += /\d/.test(value) ? parseFloat(value.match(/\d+/)[0]) : 0;
             }
         });
 
         return ret;
     }
 
-    if (hasBoxSizing || boxSizingVal !== "content-box") {
-        margin = styleParser(["margin-right", "margin-left"]);
-        width  = element.scrollWidth + margin;
-    }
-    else {
-        margin  = styleParser(["margin-right",       "margin-left"]);
-        padding = styleParser(["padding-right",      "padding-left"]);
-        border  = styleParser(["border-right-width", "border-left-width"]);
-        width   = element.scrollWidth + margin + padding + border;
-    }
+    margin = incMargin ? styleParser(["margin-right", "margin-left"]) : 0;
+    width  = element[getType] + margin;
+
+    // if (hasBoxSizing || boxSizingVal !== "content-box") {
+    //     margin = styleParser(["margin-right", "margin-left"]);
+    //     width  = element.offsetWidth + margin;
+    // }
+    // else {
+    //     margin  = styleParser(["margin-right",       "margin-left"]);
+    //     padding = styleParser(["padding-right",      "padding-left"]);
+    //     border  = styleParser(["border-right-width", "border-left-width"]);
+    //     width   = element.offsetWidth + margin + padding + border;
+    // }
 
     return width;
 }
@@ -223,18 +257,46 @@ function getTransitionEndEventNames() {
     }
 }
 
-function triggerEvent(element, type, bubbles, cancelable) {
+function addListener(element, type, fn, capture) {
+    capture = capture || false;
+
+    return support.addEventListener ?
+        element.addEventListener(type, fn, capture) :
+        element.attachEvent("on" + type, fn);
+}
+
+function removeListener(element, type, fn, capture) {
+    capture = capture || false;
+    
+    return support.removeEventListener ?
+        element.removeEventListener(type, fn, capture) :
+        element.detachEvent("on" + type, fn);
+}
+
+function triggerEvent(element, type, bubbles, cancelable, data) {
     var event;
+
+    function parseData() {
+        if (data) {
+            for (var d in data) {
+                if (data.hasOwnProperty(d)) {
+                    event[d] = data[d];
+                }
+            }
+        }
+    }
 
     if (support.createEvent) {
         event = document.createEvent("Event");
-
         event.initEvent(type, bubbles, cancelable);
+
+        parseData();
         element.dispatchEvent(event);
     }
     else {
         event = document.createEventObject();
 
+        parseData();
         element.fireEvent(type, event);
     }
 }
