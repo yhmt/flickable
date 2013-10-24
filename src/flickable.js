@@ -391,7 +391,7 @@ Flickable = (function () {
             var _this              = this,
                 childElement       = getChildElement(this.el),
                 childElementWidth  = getElementWidth(childElement[0], true),
-                parentElementWidth = getElementWidth(this.el.parentNode, false, "scrollWidth");
+                parentElementWidth = getElementWidth(this.el.parentNode, false, "offsetWidth");
 
             function insertElement(start, end) {
                 var firstElement = childElement[start],

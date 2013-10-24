@@ -290,30 +290,30 @@ function getChildElementCount(element) {
 
 function getElementWidth(element, incMargin, getType) {
     incMargin = incMargin || false;
-    getType   = getType   || "offsetWidth";
+    getType   = getType   || "scrollWidth";
 
     var getStyles    = element.currentStyle || global.getComputedStyle(element, null),
-        // hasBoxSizing = (function () {
-        //     var ret        = false,
-        //         properties = [
-        //             "-webkit-box-sizing",
-        //             "-moz-box-sizing",
-        //             "-o-box-sizing",
-        //             "-ms-box-sizing",
-        //             "box-sizing"
-        //         ];
+        hasBoxSizing = (function () {
+            var ret        = false,
+                properties = [
+                    "-webkit-box-sizing",
+                    "-moz-box-sizing",
+                    "-o-box-sizing",
+                    "-ms-box-sizing",
+                    "box-sizing"
+                ];
 
-        //     forEach(properties, function (prop) {
-        //         if (element.style[prop] !== undefined) {
-        //             boxSizingVal = getStyles.prop;
-        //             ret          = true;
-        //         }
-        //     });
+            forEach(properties, function (prop) {
+                if (element.style[prop] !== undefined) {
+                    boxSizingVal = getStyles.prop;
+                    ret          = true;
+                }
+            });
 
-        //     return ret;
-        // })(),
-        // boxSizingVal, margin, padding, border, width;
-        margin, width;
+            return ret;
+        })(),
+        boxSizingVal, margin, padding, border, width;
+        // margin, width;
 
     function styleParser(props) {
         var ret = 0;
@@ -329,19 +329,16 @@ function getElementWidth(element, incMargin, getType) {
         return ret;
     }
 
-    margin = incMargin ? styleParser(["margin-right", "margin-left"]) : 0;
-    width  = element[getType] + margin;
-
-    // if (hasBoxSizing || boxSizingVal !== "content-box") {
-    //     margin = styleParser(["margin-right", "margin-left"]);
-    //     width  = element.offsetWidth + margin;
-    // }
-    // else {
-    //     margin  = styleParser(["margin-right",       "margin-left"]);
-    //     padding = styleParser(["padding-right",      "padding-left"]);
-    //     border  = styleParser(["border-right-width", "border-left-width"]);
-    //     width   = element.offsetWidth + margin + padding + border;
-    // }
+    if (hasBoxSizing || boxSizingVal !== "content-box") {
+        margin = styleParser(["margin-right", "margin-left"]);
+        width  = element[getType] + margin;
+    }
+    else {
+        margin  = styleParser(["margin-right",       "margin-left"]);
+        padding = styleParser(["padding-right",      "padding-left"]);
+        border  = styleParser(["border-right-width", "border-left-width"]);
+        width   = element[getType] + margin + padding + border;
+    }
 
     return width;
 }
@@ -813,7 +810,7 @@ Flickable = (function () {
             var _this              = this,
                 childElement       = getChildElement(this.el),
                 childElementWidth  = getElementWidth(childElement[0], true),
-                parentElementWidth = getElementWidth(this.el.parentNode, false, "scrollWidth");
+                parentElementWidth = getElementWidth(this.el.parentNode, false, "offsetWidth");
 
             function insertElement(start, end) {
                 var firstElement = childElement[start],
