@@ -290,28 +290,28 @@ function getChildElementCount(element) {
 
 function getElementWidth(element, incMargin, getType) {
     incMargin = incMargin || false;
-    getType   = getType   || "scrollWidth";
+    getType   = getType   || "offsetWidth";
 
     var getStyles    = element.currentStyle || global.getComputedStyle(element, null),
-        hasBoxSizing = (function () {
-            var ret        = false,
-                properties = [
-                    "-webkit-box-sizing",
-                    "-moz-box-sizing",
-                    "-o-box-sizing",
-                    "-ms-box-sizing",
-                    "box-sizing"
-                ];
+        // hasBoxSizing = (function () {
+        //     var ret        = false,
+        //         properties = [
+        //             "-webkit-box-sizing",
+        //             "-moz-box-sizing",
+        //             "-o-box-sizing",
+        //             "-ms-box-sizing",
+        //             "box-sizing"
+        //         ];
 
-            forEach(properties, function (prop) {
-                if (element.style[prop] !== undefined) {
-                    boxSizingVal = getStyles.prop;
-                    ret          = true;
-                }
-            });
+        //     forEach(properties, function (prop) {
+        //         if (element.style[prop] !== undefined) {
+        //             boxSizingVal = getStyles.prop;
+        //             ret          = true;
+        //         }
+        //     });
 
-            return ret;
-        })(),
+        //     return ret;
+        // })(),
         boxSizingVal, margin, padding, border, width;
         // margin, width;
 
@@ -322,6 +322,7 @@ function getElementWidth(element, incMargin, getType) {
             var value = getStyles[prop];
 
             if (value) {
+                // console.log(value);
                 ret += /\d/.test(value) ? parseFloat(value.match(/\d+/)[0]) : 0;
             }
         });
@@ -329,16 +330,16 @@ function getElementWidth(element, incMargin, getType) {
         return ret;
     }
 
-    if (hasBoxSizing || boxSizingVal !== "content-box") {
+    // if (hasBoxSizing || boxSizingVal !== "content-box") {
         margin = styleParser(["margin-right", "margin-left"]);
         width  = element[getType] + margin;
-    }
-    else {
-        margin  = styleParser(["margin-right",       "margin-left"]);
-        padding = styleParser(["padding-right",      "padding-left"]);
-        border  = styleParser(["border-right-width", "border-left-width"]);
-        width   = element[getType] + margin + padding + border;
-    }
+    // }
+    // else {
+    // margin  = styleParser(["margin-right",       "margin-left"]);
+    // padding = styleParser(["padding-right",      "padding-left"]);
+    // border  = styleParser(["border-right-width", "border-left-width"]);
+    // width   = element[getType] + margin + padding + border;
+    // }
 
     return width;
 }
@@ -356,16 +357,16 @@ function getTransitionEndEventNames() {
                           "oldie" : "ie";
 
     switch (browserName) {
-        case "webkit":
-            return [eventNames[0], eventNames[3]];
-        case "firefox":
-            return [eventNames[1], eventNames[3]];
-        case "opera":
-            return [eventNames[2], eventNames[3]];
-        case "ie":
-            return [eventNames[3]];
-        default:
-            return [];
+    case "webkit":
+        return [eventNames[0], eventNames[3]];
+    case "firefox":
+        return [eventNames[1], eventNames[3]];
+    case "opera":
+        return [eventNames[2], eventNames[3]];
+    case "ie":
+        return [eventNames[3]];
+    default:
+        return [];
     }
 }
 
@@ -425,7 +426,7 @@ Flickable = (function () {
         this.data = {};
         this.opts = options || {};
 
-        this.opts.setWidth      = this.opts.setWidth      || true;
+        this.opts.setWidth      = this.opts.setWidth      || false;
         this.opts.autoPlay      = this.opts.autoPlay      || false;
         this.opts.loop          = this.opts.loop          || (this.opts.autoPlay ? true : false);
         this.opts.interval      = this.opts.interval      || 6600;
@@ -446,6 +447,8 @@ Flickable = (function () {
         this.visibleSize  = 0;
 
         this.timeId       = null;
+
+        this.beforeChildElementCount = getChildElementCount(this.el);
 
         this.scrolling    =
         this.moveReady    =
@@ -507,8 +510,6 @@ Flickable = (function () {
             }
         },
         refresh: function () {
-            console.log("refresh");
-
             if (this.opts.setWidth) {
                 this._setWidth();
             }
@@ -524,6 +525,8 @@ Flickable = (function () {
                             this.maxPoint < 0  ?
                                 0 : getElementWidth(getFirstElementChild(this.el), true)
                             ;
+            // console.log("this.distance: %s", this.distance);
+            // console.log("this.maxPoint: %s", this.maxPoint);
             this.maxX     = -this.distance * this.maxPoint;
 
             // this.visibleSize = Math.round(parentElementWidth / childElementWidth);
@@ -562,8 +565,12 @@ Flickable = (function () {
             this.moveToPoint(this.currentPoint + 1);
         },
         moveToPoint: function (point, duration) {
-            point    = point === undefined ? this.currentPoint : point; 
-            duration = duration || this.opts.transition.duration;
+            console.log("@@@ point   : %s", point);
+            console.log("@@@ duration: %s", duration);
+            point    = point    === undefined ? this.currentPoint : point; 
+            duration = duration === undefined ? this.opts.transition.duration : duration;
+            console.log("@@@ point   : %s", point);
+            console.log("@@@ duration: %s", duration);
 
             var beforePoint   = this.currentPoint;
             this.currentPoint = point < 0 ?
@@ -581,8 +588,8 @@ Flickable = (function () {
                 this.useJsAnimate = true;
             }
 
-            // console.log("this.currentPoint: %s", this.currentPoint);
-            // console.log("this.maxPoint: %s", this.maxPoint);
+            console.log("this.currentPoint: %s", this.currentPoint);
+            console.log("this.maxPoint: %s", this.maxPoint);
 
             this._setX(- this.currentPoint * this.distance, duration);
 
@@ -729,8 +736,6 @@ Flickable = (function () {
                 return;
             }
 
-            console.log("_touchEnd");
-
             newPoint = -this.currentX / this.distance;
             newPoint = this.directionX > 0 ?
                            Math.ceil(newPoint)  :
@@ -746,12 +751,12 @@ Flickable = (function () {
                 newPoint = this.maxPoint;
             }
 
-            console.log("this.distance     : %s", this.distance);
-            console.log("this.currentX     : %s", this.currentX);
-            console.log("this.directionX   : %s", this.directionX);
-            console.log("this.currentPoint : %s", this.currentPoint);
-            console.log("this.maxPoint     : %s", this.maxPoint);
-            console.log("newPoint          : %s", newPoint);
+            // console.log("this.distance     : %s", this.distance);
+            // console.log("this.currentX     : %s", this.currentX);
+            // console.log("this.directionX   : %s", this.directionX);
+            // console.log("this.currentPoint : %s", this.currentPoint);
+            // console.log("this.maxPoint     : %s", this.maxPoint);
+            // console.log("newPoint          : %s", newPoint);
 
             this._touchAfter({
                 moved         : newPoint !== _this.currentPoint,
@@ -760,7 +765,7 @@ Flickable = (function () {
                 cancelled     : false
             });
 
-            console.log("newPoint: %s", newPoint);
+            console.log("@@@ newPoint: %s", newPoint);
             this.moveToPoint(newPoint);
         },
         _click: function (event) {
@@ -777,7 +782,7 @@ Flickable = (function () {
                 removeListener(_this.el, "click", _this, true);
             }, 200);
 
-            console.log("_touchAfter");
+            // console.log("_touchAfter");
 
             triggerEvent(this.el, "fltouchend", true, false, params);
         },
@@ -801,8 +806,8 @@ Flickable = (function () {
             var childElementWidth = width || getElementWidth(getFirstElementChild(this.el), true),
                 childElementCount = getChildElementCount(this.el);
 
-            console.log("childElementWidth: %s", childElementWidth);
-            console.log("childElementCount: %s", childElementCount);
+            // console.log("childElementWidth: %s", childElementWidth);
+            // console.log("childElementCount: %s", childElementCount);
 
             this.el.style.width = childElementWidth * childElementCount + "px";
         },
@@ -810,7 +815,8 @@ Flickable = (function () {
             var _this              = this,
                 childElement       = getChildElement(this.el),
                 childElementWidth  = getElementWidth(childElement[0], true),
-                parentElementWidth = getElementWidth(this.el.parentNode, false, "offsetWidth");
+                // parentElementWidth = getElementWidth(this.el.parentNode, false, "offsetWidth");
+                parentElementWidth = this.el.parentNode.offsetWidth;
 
             function insertElement(start, end) {
                 var firstElement = childElement[start],
@@ -820,12 +826,15 @@ Flickable = (function () {
                 _this.el.appendChild(firstElement.cloneNode(true));
             }
 
-            this.visibleSize = Math.round(parentElementWidth / childElementWidth);
+            // console.log(this.el.parentNode.offsetWidth);
+            // console.log(parentElementWidth);
+            // console.log(childElementWidth);
+            this.visibleSize = Math.round(parentElementWidth / childElementWidth) + 1;
 
-            console.log("this.el.parentNode: %s", this.el.parentNode);
-            console.log("parentElementWidth: %s", parentElementWidth);
-            console.log("childElementWidth: %s", childElementWidth);
-            console.log("this.visibleSize: %s", this.visibleSize);
+            // console.log("this.el.parentNode: %s", this.el.parentNode);
+            // console.log("parentElementWidth: %s", parentElementWidth);
+            // console.log("childElementWidth: %s", childElementWidth);
+            // console.log("this.visibleSize: %s", this.visibleSize);
 
             return (function (i, l) {
                 for (; l; i++, l--) {
@@ -837,8 +846,9 @@ Flickable = (function () {
         },
         _loop: function () {
             var _this             = this,
-                moveToBack        = this.currentPoint <= this.visibleSize,
-                moveToNext        = this.currentPoint >= (this.maxPoint - this.visibleSize),
+                visibleSize       = this.visibleSize,
+                moveToBack        = this.currentPoint < this.visibleSize,
+                moveToNext        = this.currentPoint > (this.maxPoint - this.visibleSize),
                 clearInterval     = this.opts.clearInterval,
                 childElementCount = getChildElementCount(this.el),
                 transitionEndEventNames = getTransitionEndEventNames(),
@@ -846,23 +856,33 @@ Flickable = (function () {
                 timerId;
 
             function loopFunc() {
-                return moveToBack ?
-                    _this.moveToPoint(_this.currentPoint + childElementCount, 0) :
-                    _this.moveToPoint(_this.currentPoint - childElementCount, 0);
+                if (_this.currentPoint < _this.visibleSize) {
+                    console.log("### back loop");
+                    // _this.moveToPoint(childElementCount - (_this.visibleSize + 1), 0);
+                    _this.moveToPoint(_this.currentPoint + _this.beforeChildElementCount, 0);
+                }
+                else if (_this.currentPoint > (_this.maxPoint - _this.visibleSize)) {
+                    console.log("### next loop");
+                    // _this.moveToPoint(visibleSize, 0);
+                    _this.moveToPoint(_this.currentPoint - _this.beforeChildElementCount, 0);
+                }
             }
 
-            if (hasTransitionEndEvents && moveToBack || moveToNext) {
-                forEach(transitionEndEventNames, function (eventName) {
-                    addListener(_this.el, eventName, loopFunc, false);
+            if (hasTransitionEndEvents) {
+                forEach(transitionEndEventNames, function (transitionEndEvent) {
+                    addListener(_this.el, transitionEndEvent, loopFunc);
                     setTimeout(function () {
-                        removeListener(_this.el, eventName, loopFunc, false);
+                        removeListener(_this.el, transitionEndEvent, loopFunc);
                     }, clearInterval);
                 });
             }
             // TODO: イミフ
-            // else {
-            //     timeId = loopFunc;
-            // }
+            else {
+                timerId = loopFunc;
+                clearTimeout(function () {
+                    loopFunc();
+                }, clearInterval);
+            }
         },
         _animate: function (x, transitionDuration) {
             var _this    = this,

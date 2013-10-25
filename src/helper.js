@@ -175,28 +175,28 @@ function getChildElementCount(element) {
 
 function getElementWidth(element, incMargin, getType) {
     incMargin = incMargin || false;
-    getType   = getType   || "scrollWidth";
+    getType   = getType   || "offsetWidth";
 
     var getStyles    = element.currentStyle || global.getComputedStyle(element, null),
-        hasBoxSizing = (function () {
-            var ret        = false,
-                properties = [
-                    "-webkit-box-sizing",
-                    "-moz-box-sizing",
-                    "-o-box-sizing",
-                    "-ms-box-sizing",
-                    "box-sizing"
-                ];
+        // hasBoxSizing = (function () {
+        //     var ret        = false,
+        //         properties = [
+        //             "-webkit-box-sizing",
+        //             "-moz-box-sizing",
+        //             "-o-box-sizing",
+        //             "-ms-box-sizing",
+        //             "box-sizing"
+        //         ];
 
-            forEach(properties, function (prop) {
-                if (element.style[prop] !== undefined) {
-                    boxSizingVal = getStyles.prop;
-                    ret          = true;
-                }
-            });
+        //     forEach(properties, function (prop) {
+        //         if (element.style[prop] !== undefined) {
+        //             boxSizingVal = getStyles.prop;
+        //             ret          = true;
+        //         }
+        //     });
 
-            return ret;
-        })(),
+        //     return ret;
+        // })(),
         boxSizingVal, margin, padding, border, width;
         // margin, width;
 
@@ -207,6 +207,7 @@ function getElementWidth(element, incMargin, getType) {
             var value = getStyles[prop];
 
             if (value) {
+                // console.log(value);
                 ret += /\d/.test(value) ? parseFloat(value.match(/\d+/)[0]) : 0;
             }
         });
@@ -214,16 +215,16 @@ function getElementWidth(element, incMargin, getType) {
         return ret;
     }
 
-    if (hasBoxSizing || boxSizingVal !== "content-box") {
+    // if (hasBoxSizing || boxSizingVal !== "content-box") {
         margin = styleParser(["margin-right", "margin-left"]);
         width  = element[getType] + margin;
-    }
-    else {
-        margin  = styleParser(["margin-right",       "margin-left"]);
-        padding = styleParser(["padding-right",      "padding-left"]);
-        border  = styleParser(["border-right-width", "border-left-width"]);
-        width   = element[getType] + margin + padding + border;
-    }
+    // }
+    // else {
+    // margin  = styleParser(["margin-right",       "margin-left"]);
+    // padding = styleParser(["padding-right",      "padding-left"]);
+    // border  = styleParser(["border-right-width", "border-left-width"]);
+    // width   = element[getType] + margin + padding + border;
+    // }
 
     return width;
 }
@@ -241,16 +242,16 @@ function getTransitionEndEventNames() {
                           "oldie" : "ie";
 
     switch (browserName) {
-        case "webkit":
-            return [eventNames[0], eventNames[3]];
-        case "firefox":
-            return [eventNames[1], eventNames[3]];
-        case "opera":
-            return [eventNames[2], eventNames[3]];
-        case "ie":
-            return [eventNames[3]];
-        default:
-            return [];
+    case "webkit":
+        return [eventNames[0], eventNames[3]];
+    case "firefox":
+        return [eventNames[1], eventNames[3]];
+    case "opera":
+        return [eventNames[2], eventNames[3]];
+    case "ie":
+        return [eventNames[3]];
+    default:
+        return [];
     }
 }
 
