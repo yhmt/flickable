@@ -45,10 +45,11 @@ Flickable = (function () {
         }
         else if (support.cssAnimation && userAgent.isLegacy) {
             initStyle = {
-                transitionProperty       : getCSSVal("transform"),
+                position                 : "relative",
+                left                     : "0px",
+                transitionProperty       : "left",
                 transitionDuration       : "0ms",
-                transitionTimingFunction : this.opts.transition.timingFunction,
-                transform                : getTranslate(0)
+                transitionTimingFunction : this.opts.transition.timingFunction
             };
         }
         else {

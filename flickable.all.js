@@ -80,8 +80,8 @@ var Flickable,
                 os      : platformVersion,
                 browser : checkBrowser.version
             },
-            isLegacy : (isAndroid && platformVersion < 4) ||
-                       (checkBrowser.name === "msie" && checkBrowser.version < 10)
+            isLegacy : isAndroid && platformVersion < 4 ||
+                       checkBrowser.name === "msie" && checkBrowser.version < 10
         };
     })(),
     touchStartEvent        = support.touchEvent        ? "touchstart"        : "mousedown",
@@ -312,17 +312,16 @@ function getElementWidth(element, incMargin, getType) {
 
         //     return ret;
         // })(),
-        boxSizingVal, margin, padding, border, width;
-        // margin, width;
+        // boxSizingVal, margin, padding, border, width;
+        margin, width;
 
     function styleParser(props) {
         var ret = 0;
 
         forEach(props, function (prop) {
-            var value = getStyles[prop];
+            var value = getStyles[camelCase(prop)];
 
             if (value) {
-                // console.log(value);
                 ret += /\d/.test(value) ? parseFloat(value.match(/\d+/)[0]) : 0;
             }
         });
@@ -331,8 +330,8 @@ function getElementWidth(element, incMargin, getType) {
     }
 
     // if (hasBoxSizing || boxSizingVal !== "content-box") {
-        margin = styleParser(["margin-right", "margin-left"]);
-        width  = element[getType] + margin;
+    margin = styleParser(["margin-right", "margin-left"]);
+    width  = element[getType] + margin;
     // }
     // else {
     // margin  = styleParser(["margin-right",       "margin-left"]);
@@ -418,6 +417,12 @@ function ucFirst(str) {
     return str[0].toUpperCase() + str.substring(1, str.length);
 }
 
+function camelCase(str) {
+    return str.replace(/-[a-z]/ig, function (x) {
+        return x[1].toUpperCase();
+    });
+}
+
 Flickable = (function () {
     function Flickable(element, options, callback) {
         var _this = this, initStyle;
@@ -465,10 +470,11 @@ Flickable = (function () {
         }
         else if (support.cssAnimation && userAgent.isLegacy) {
             initStyle = {
-                transitionProperty       : getCSSVal("transform"),
+                position                 : "relative",
+                left                     : "0px",
+                transitionProperty       : "left",
                 transitionDuration       : "0ms",
-                transitionTimingFunction : this.opts.transition.timingFunction,
-                transform                : getTranslate(0)
+                transitionTimingFunction : this.opts.transition.timingFunction
             };
         }
         else {

@@ -76,8 +76,8 @@ var Flickable,
                 os      : platformVersion,
                 browser : checkBrowser.version
             },
-            isLegacy : (isAndroid && platformVersion < 4) ||
-                       (checkBrowser.name === "msie" && checkBrowser.version < 10)
+            isLegacy : isAndroid && platformVersion < 4 ||
+                       checkBrowser.name === "msie" && checkBrowser.version < 10
         };
     })(),
     touchStartEvent        = support.touchEvent        ? "touchstart"        : "mousedown",
