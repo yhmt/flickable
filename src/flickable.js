@@ -471,15 +471,15 @@ Flickable = (function () {
             // console.log("borderSize: %s", borderSize);
 
             function loopFunc() {
-                console.log("this.currentPoint: %s", _this.currentPoint);
+                // console.log("this.currentPoint: %s", _this.currentPoint);
 
                 // if (_this.currentPoint < _this.visibleSize) {
                 if (_this.currentPoint < _this.visibleSize) {
-                    console.log("### back loop");
+                    // console.log("### back loop");
 
-                    console.log("this.visibleSize:             %s", _this.visibleSize);
-                    console.log("this.beforeChildElementCount: %s", _this.beforeChildElementCount);
-                    console.log("this.currentPoint:            %s", _this.currentPoint);
+                    // console.log("this.visibleSize:             %s", _this.visibleSize);
+                    // console.log("this.beforeChildElementCount: %s", _this.beforeChildElementCount);
+                    // console.log("this.currentPoint:            %s", _this.currentPoint);
 
                     // console.log("borderSize: %s", borderSize);
                     // console.log(_this.currentPoint + _this.beforeChildElementCount);
@@ -496,8 +496,8 @@ Flickable = (function () {
                 }
                 // else if (_this.currentPoint > (_this.maxPoint - _this.visibleSize)) {
                 else if (_this.currentPoint > (_this.maxPoint - _this.visibleSize)) {
-                    console.log("### next loop");
-                    console.log(_this.currentPoint - _this.beforeChildElementCount);
+                    // console.log("### next loop");
+                    // console.log(_this.currentPoint - _this.beforeChildElementCount);
 
                     // _this.moveToPoint(visibleSize, 0);
                     // _this.moveToPoint(_this.currentPoint - _this.beforeChildElementCount, 0);
