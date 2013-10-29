@@ -85,26 +85,3 @@ var Flickable,
     touchEndEvent          = support.touchEvent        ? "touchend"          : "mouseup",
     orientationChangeEvent = support.orientationchange ? "orientationchange" : "resize"
 ;
-
-// Object.keys shim
-// http://uupaa.hatenablog.com/entry/2012/02/04/145400
-if (!Object.keys) {
-    Object.keys = function (source) {
-        var ret = [], i = 0, key;
-
-        for (key in source) {
-            if (source.hasOwnProperty(key)) {
-                ret[i++] = key;
-            }
-        }
-
-        return ret;
-    };
-}
-
-// Array.isArray shim
-if (!Array.isArray) {
-    Array.isArray = function (any) {
-        return Object.prototype.toString.call(any) === "[object Array]";
-    };
-}

@@ -265,10 +265,11 @@ Flickable = (function () {
                                       -1 : 1
                                   ;
 
-                isPrevent = !triggerEvent(this.el, "fltouchmove", true, true, {
-                    delta     : distX,
-                    direction : _this.directionX
-                });
+                // isPrevent = !triggerEvent(this.el, "fltouchmove", true, true, {
+                //     delta     : distX,
+                //     direction : _this.directionX
+                // });
+                isPrevent = !triggerEvent(this.el, "fltouchmove", true, true);
 
                 // TODO: fix
                 if (isPrevent) {
@@ -278,6 +279,7 @@ Flickable = (function () {
                     //     newPoint      : _this.currentPoint,
                     //     cancelled     : true
                     // });
+                    // this._touchAfter();
                     this._setX(newX);
                 }
                 else {
@@ -338,12 +340,13 @@ Flickable = (function () {
             // console.log("this.maxPoint     : %s", this.maxPoint);
             // console.log("newPoint          : %s", newPoint);
 
-            this._touchAfter({
-                moved         : newPoint !== _this.currentPoint,
-                originalPoint : _this.currentPoint,
-                newPoint      : newPoint,
-                cancelled     : false
-            });
+            // this._touchAfter({
+            //     moved         : newPoint !== _this.currentPoint,
+            //     originalPoint : _this.currentPoint,
+            //     newPoint      : newPoint,
+            //     cancelled     : false
+            // });
+            this._touchAfter();
 
             // console.log("@@@ newPoint: %s", newPoint);
             this.moveToPoint(newPoint);
@@ -352,7 +355,8 @@ Flickable = (function () {
             event.stopPropagation();
             event.preventDefault();
         },
-        _touchAfter: function (params) {
+        // _touchAfter: function (params) {
+        _touchAfter: function () {
             var _this = this;
 
             this.scrolling = false;
@@ -364,7 +368,8 @@ Flickable = (function () {
 
             // console.log("_touchAfter");
 
-            triggerEvent(this.el, "fltouchend", true, false, params);
+            // triggerEvent(this.el, "fltouchend", true, false, params);
+            triggerEvent(this.el, "fltouchend", true, false);
         },
         _setX: function (x, duration) {
             x        = parseInt(x, 10);
@@ -403,57 +408,105 @@ Flickable = (function () {
                 childElement       = getChildElement(this.el),
                 childElementWidth  = getElementWidth(childElement[0], true),
                 // parentElementWidth = getElementWidth(this.el.parentNode, false, "offsetWidth");
-                parentElementWidth = this.el.parentNode.offsetWidth;
+                parentElementWidth = this.el.parentNode.offsetWidth,
+                stashCurrentPoint, i, l;
 
             function insertElement(start, end) {
                 var firstElement = childElement[start],
                     lastElement  = childElement[childElement.length - end];
 
-                _this.el.insertBefore(lastElement.cloneNode(true), childElement[0]);
-                _this.el.appendChild(firstElement.cloneNode(true));
+                if (lastElement && firstElement) {
+                    _this.el.insertBefore(lastElement.cloneNode(true), childElement[0]);
+                    _this.el.appendChild(firstElement.cloneNode(true));
+                }
+                // if (firstElement) {
+                //     _this.el.appendChild(firstElement.cloneNode(true));
+                //     // insertedCount++;
+                // }
             }
 
             // console.log(this.el.parentNode.offsetWidth);
             // console.log(parentElementWidth);
             // console.log(childElementWidth);
-            this.visibleSize = Math.round(parentElementWidth / childElementWidth) + 1;
+            this.visibleSize  = Math.round(parentElementWidth / childElementWidth) + 1;
+            this.visibleSize  = this.visibleSize < this.beforeChildElementCount ? this.visibleSize : this.beforeChildElementCount;
+            // stashCurrentPoint = this.visibleSize < this.beforeChildElementCount ? this.visibleSize : this.beforeChildElementCount;
+            // this.visibleSize =  Math.min(this.visibleSize, this.beforeChildElementCount);
+            // this.visibleSize = Math.min(this.visibleSize > this.beforeChildElementCount);
 
             // console.log("this.el.parentNode: %s", this.el.parentNode);
             // console.log("parentElementWidth: %s", parentElementWidth);
             // console.log("childElementWidth: %s", childElementWidth);
             // console.log("this.visibleSize: %s", this.visibleSize);
 
-            return (function (i, l) {
-                for (; l; i++, l--) {
-                    insertElement(i, _this.visibleSize - i);
-                }
+            i = 0;
+            // l = this.visibleSize;
+            // l = this.visibleSize < this.beforeChildElementCount ? this.visibleSize : this.beforeChildElementCount;
+            l = this.visibleSize;
+            // l = Math.min(this.visibleSize, this.beforeChildElementCount);
 
-                if (!_this.opts.defaultPoint) {
-                    _this.currentPoint = _this.visibleSize;
-                }
-            })(0, this.visibleSize);
+            for (; l; i++, l--) {
+                insertElement(i, l);
+            }
+
+            if (!this.opts.defaultPoint) {
+                // this.currentPoint = insertedCount > this.visibleSize ? insertedCount - this.visibleSize : this.visibleSize;
+                // this.currentPoint = Math.min(this.visibleSize, this.insertBeforeCount);
+                // this.currentPoint = this.visibleSize;
+                this.currentPoint = this.visibleSize;
+                // this.currentPoint = this.visibleSize - this.beforeChildElementCount;
+            }
         },
         _loop: function () {
-            var _this             = this,
-                visibleSize       = this.visibleSize,
-                moveToBack        = this.currentPoint < this.visibleSize,
-                moveToNext        = this.currentPoint > (this.maxPoint - this.visibleSize),
-                clearInterval     = this.opts.clearInterval,
-                childElementCount = getChildElementCount(this.el),
+            var _this                   = this,
                 transitionEndEventNames = getTransitionEndEventNames(),
                 hasTransitionEndEvents  = transitionEndEventNames.length,
+                clearInterval           = this.opts.clearInterval,
                 timerId;
 
+            // console.log("this.visibleSize: %s", this.visibleSize);
+            // console.log("this.beforeChildElementCount: %s", this.beforeChildElementCount);
+            // console.log("this.insertBeforeCount: %s", this.insertBeforeCount);
+            // console.log("this.currentPoint: %s", this.currentPoint);
+            // console.log("borderSize: %s", borderSize);
+
             function loopFunc() {
+                console.log("this.currentPoint: %s", _this.currentPoint);
+
+                // if (_this.currentPoint < _this.visibleSize) {
                 if (_this.currentPoint < _this.visibleSize) {
-                    // console.log("### back loop");
+                    console.log("### back loop");
+
+                    console.log("this.visibleSize:             %s", _this.visibleSize);
+                    console.log("this.beforeChildElementCount: %s", _this.beforeChildElementCount);
+                    console.log("this.currentPoint:            %s", _this.currentPoint);
+
+                    // console.log("borderSize: %s", borderSize);
+                    // console.log(_this.currentPoint + _this.beforeChildElementCount);
+
                     // _this.moveToPoint(childElementCount - (_this.visibleSize + 1), 0);
-                    _this.moveToPoint(_this.currentPoint + _this.beforeChildElementCount, 0);
+                    // _this.moveToPoint(_this.currentPoint + _this.beforeChildElementCount, 0);
+
+                    // _this.moveToPoint(_this.currentPoint + _this.beforeChildElementCount, 0);
+
+                    // _this.moveToPoint(_this.currentPoint + _this.beforeChildElementCount, 0);
+
+                    // TMP
+                    _this.moveToPoint(_this.currentPoint + _this.visibleSize, 0);
                 }
+                // else if (_this.currentPoint > (_this.maxPoint - _this.visibleSize)) {
                 else if (_this.currentPoint > (_this.maxPoint - _this.visibleSize)) {
-                    // console.log("### next loop");
+                    console.log("### next loop");
+                    console.log(_this.currentPoint - _this.beforeChildElementCount);
+
                     // _this.moveToPoint(visibleSize, 0);
-                    _this.moveToPoint(_this.currentPoint - _this.beforeChildElementCount, 0);
+                    // _this.moveToPoint(_this.currentPoint - _this.beforeChildElementCount, 0);
+
+                    // _this.moveToPoint(_this.currentPoint - _this.beforeChildElementCount, 0);
+
+                    // TMP
+                    _this.moveToPoint(_this.currentPoint - _this.visibleSize, 0);
+                    // _this.moveToPoint(_this.currentPoint - borderSize, 0);
                 }
             }
 

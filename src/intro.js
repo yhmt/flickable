@@ -1,1 +1,1 @@
-(function (global, document, undefined) {
+;(function (global, document, undefined) {

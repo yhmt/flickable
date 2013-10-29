@@ -270,30 +270,18 @@ function removeListener(element, type, fn, capture) {
         element.detachEvent("on" + type, fn);
 }
 
-function triggerEvent(element, type, bubbles, cancelable, data) {
+function triggerEvent(element, type, bubbles, cancelable) {
     var event;
-
-    function parseData() {
-        if (data) {
-            for (var d in data) {
-                if (data.hasOwnProperty(d)) {
-                    event[d] = data[d];
-                }
-            }
-        }
-    }
 
     if (support.createEvent) {
         event = document.createEvent("Event");
         event.initEvent(type, bubbles, cancelable);
 
-        parseData();
         element.dispatchEvent(event);
     }
     else {
         event = document.createEventObject();
 
-        parseData();
         element.fireEvent(type, event);
     }
 }

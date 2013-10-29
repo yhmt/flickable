@@ -13,6 +13,7 @@ module.exports = (grunt) ->
         files:
           "<%= pkg.name %>.all.js": [
             "src/intro.js"
+            "src/shims.js"
             "src/variable.js"
             "src/helper.js"
             "src/flickable.js"
@@ -48,7 +49,7 @@ module.exports = (grunt) ->
       #   tasks: "prod"
 
     jshint:
-      src: ["flickable.all.js"]
+      src: ["<%= pkg.name %>.all.js"]
       # options:
         # jshintrc: ".jshintrc"
       options: do ->
