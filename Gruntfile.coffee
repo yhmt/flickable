@@ -1,6 +1,13 @@
 matchdep  = require "matchdep"
-copyright = "// <%= pkg.title %> <%= pkg.version %> Copyright (c) #{new Date().getFullYear()} <%= pkg.author %>\n" +
-            "// See <%= pkg.url %>\n"
+copyright = do ->
+  base = "// <%= pkg.title %> <%= pkg.version %> " +
+         "Copyright (C) #{new Date().getFullYear()} <%= pkg.author %>, " +
+         "<%= pkg.license %> License.\n"
+
+  return {
+    all : base + "// See <%= pkg.url %>\n"
+    min : base
+  }
 
 module.exports = (grunt) ->
   config =
@@ -9,7 +16,7 @@ module.exports = (grunt) ->
     concat:
       dist:
         options:
-          banner: copyright
+          banner: copyright.all
         files:
           "<%= pkg.name %>.all.js": [
             "src/intro.js"
@@ -24,7 +31,7 @@ module.exports = (grunt) ->
       dist:
         options:
           mangle: true
-          banner: copyright
+          banner: copyright.min
         files:
           "<%= pkg.name %>.min.js": ["<%= pkg.name %>.all.js"]
 

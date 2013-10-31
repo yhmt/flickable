@@ -1,4 +1,4 @@
-// Flickable 0.0.1 Copyright (c) 2013 Yuya Hashimoto
+// Flickable 0.0.2 Copyright (C) 2013 @yuya, MIT License.
 // See http://github.com/yhmt/flickable
 ;(function (global, document, undefined) {
 
