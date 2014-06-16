@@ -3,8 +3,8 @@
   "title": "Flickable",
   "description": "",
   "version": "0.0.3",
-  "url": "http://github.com/yhmt/flickable",
-  "author": "@yuya",
+  "url": "http://github.com/yuya/flickable",
+  "author": "Yuya Hashimoto",
   "license": "MIT",
   "main": "index.js",
   "directories": {
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/yhmt/flickable.git"
+    "url": "git://github.com/yuya/flickable.git"
   },
   "devDependencies": {
     "matchdep": "~0.3.0",

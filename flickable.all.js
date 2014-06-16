@@ -1,5 +1,5 @@
-// Flickable 0.0.3 Copyright (C) 2014 @yuya, MIT License.
-// See http://github.com/yhmt/flickable
+// Flickable 0.0.3 Copyright (C) 2014 Yuya Hashimoto, MIT License.
+// See http://github.com/yuya/flickable
 ;(function (global, document, undefined) {
 
 // document.getElementsByClassName
