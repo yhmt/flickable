@@ -1,4 +1,4 @@
-// Flickable 0.0.2 Copyright (C) 2013 @yuya, MIT License.
+// Flickable 0.0.3 Copyright (C) 2014 @yuya, MIT License.
 // See http://github.com/yhmt/flickable
 ;(function (global, document, undefined) {
 
@@ -437,24 +437,22 @@ Flickable = (function () {
             timingFunction : "cubic-bezier(0.23, 1, 0.32, 1)"
         };
 
-        this.maxX         =
-        this.currentX     =
-        this.startPageX   = 
-        this.startPageY   = 
-        this.basePageX    = 
-        this.directionX   = 
-        this.visibleSize  = 0;
-
-        this.timeId       = null;
+        this.maxX        = 0;
+        this.currentX    = 0;
+        this.startPageX  = 0;
+        this.startPageY  = 0;
+        this.basePageX   = 0;
+        this.directionX  = 0;
+        this.visibleSize = 0;
+        
+        this.timeId      = null;
 
         this.currentPoint            = this.opts.defaultPoint || 0;
-        // console.log("@@@@@@@@@@@@@@@@@");
-        // console.log("this.currentPoint: %s", this.currentPoint);
         this.beforeChildElementCount = getChildElementCount(this.el);
         this.afterChildElementCount  = this.beforeChildElementCount;
 
-        this.scrolling    =
-        this.moveReady    =
+        this.scrolling    = false;
+        this.moveReady    = false;
         this.useJsAnimate = false;
 
         if (support.cssAnimation && !userAgent.isLegacy) {
@@ -521,30 +519,12 @@ Flickable = (function () {
             this.maxPoint = this.opts.maxPoint ?
                                 this.opts.maxPoint :
                                 getChildElementCount(this.el) - 1;
-                                   // getChildElementCount(this.el);
-                                   // getChildElementCount(this.el) - Math.round(this.visibleSize / 2);
-                                   // childElement.length;
             this.distance = this.opts.distance ?
                                 this.opts.distance :
                             this.maxPoint < 0  ?
                                 0 : getElementWidth(getFirstElementChild(this.el), true)
                             ;
-            // console.log("this.distance: %s", this.distance);
-            // console.log("this.maxPoint: %s", this.maxPoint);
             this.maxX     = -this.distance * this.maxPoint;
-
-            // this.visibleSize = Math.round(parentElementWidth / childElementWidth);
-
-            // console.log("this.distance: %s", this.distance);
-            // console.log("this.currentPoint: %s", this.currentPoint);
-            // console.log("this.currentX: %s", this.currentX);
-            // console.log("this.maxX: %s", this.maxX);
-            // console.log("this.maxPoint: %s", this.maxPoint);
-            // console.log("this.startPageX: %s", this.startPageX);
-            // console.log("this.startPageY: %s", this.startPageY);
-            // console.log("this.basePageX: %s", this.basePageX);
-            // console.log("this.directionX: %s", this.directionX);
-            // console.log("this.visibleSize: %s", this.visibleSize);
 
             this.moveToPoint();
         },
@@ -555,10 +535,6 @@ Flickable = (function () {
             return this.currentPoint < this.maxPoint;
         },
         toPrev: function () {
-            // console.log("this.currentPoint: %s", this.currentPoint);
-            // console.log("this.visibleSize: %s", this.visibleSize);
-            // console.log("this.afterChildElementCount: %s", this.afterChildElementCount);
-
             if (!this.hasPrev()) {
                 return;
             }
@@ -566,11 +542,6 @@ Flickable = (function () {
             this.moveToPoint(this.currentPoint - 1);
         },
         toNext: function () {
-            // console.log(this.hasNext());
-            // console.log("this.currentPoint: %s", this.currentPoint);
-            // console.log("this.visibleSize: %s", this.visibleSize);
-            // console.log("this.afterChildElementCount: %s", this.afterChildElementCount);
-
             if (!this.hasNext()) {
                 return;
             }
@@ -580,12 +551,12 @@ Flickable = (function () {
         moveToPoint: function (point, duration) {
             var beforePoint, borderSize;
 
-            point    = point    === undefined ? this.currentPoint : point; 
+            point    = point    === undefined ? this.currentPoint : point;
             duration = duration === undefined ? this.opts.transition.duration : duration;
 
             beforePoint       = this.currentPoint;
             this.currentPoint = point < 0 ?
-                                    0 : 
+                                    0 :
                                 point > this.maxPoint ?
                                     this.maxPoint :
                                     parseInt(point, 10)
@@ -600,12 +571,6 @@ Flickable = (function () {
                 this.useJsAnimate = true;
             }
 
-            // console.log("this.currentPoint: %s", this.currentPoint);
-            // console.log("this.maxPoint: %s", this.maxPoint);
-
-            // console.log("@@@@@@@@@@@@@@@@@@@@");
-            // console.log(- this.currentPoint * this.distance);
-            // console.log("@@@@@@@@@@@@@@@@@@@@");
             this._setX(- this.currentPoint * this.distance, duration);
 
             if (beforePoint !== this.currentPoint) {
@@ -617,7 +582,8 @@ Flickable = (function () {
             }
         },
         startAutoPlay: function () {
-            var _this = this, interval = this.opts.interval;
+            var _this    = this,
+                interval = this.opts.interval;
 
             if (!this.opts.autoPlay) {
                 return;
@@ -677,7 +643,7 @@ Flickable = (function () {
             var _this = this,
                 pageX = getPage(event, "pageX"),
                 pageY = getPage(event, "pageY"),
-                deltaX, deltaY, distX, newX, isPrevent;
+                deltaX, deltaY, distX, newX;
 
             if (this.opts.autoPlay) {
                 this.clearAutoPlay();
@@ -700,26 +666,7 @@ Flickable = (function () {
                                       -1 : 1
                                   ;
 
-                // isPrevent = !triggerEvent(this.el, "fltouchmove", true, true, {
-                //     delta     : distX,
-                //     direction : _this.directionX
-                // });
-                isPrevent = !triggerEvent(this.el, "fltouchmove", true, true);
-
-                // TODO: fix
-                if (isPrevent) {
-                    // this._touchAfter({
-                    //     moved         : false,
-                    //     originalPoint : _this.currentPoint,
-                    //     newPoint      : _this.currentPoint,
-                    //     cancelled     : true
-                    // });
-                    // this._touchAfter();
-                    this._setX(newX);
-                }
-                else {
-                    this._setX(newX);
-                }
+                this._setX(newX);
             }
             else {
                 deltaX = Math.abs(pageX - this.startPageX);
@@ -768,29 +715,13 @@ Flickable = (function () {
                 newPoint = this.maxPoint;
             }
 
-            // console.log("this.distance     : %s", this.distance);
-            // console.log("this.currentX     : %s", this.currentX);
-            // console.log("this.directionX   : %s", this.directionX);
-            // console.log("this.currentPoint : %s", this.currentPoint);
-            // console.log("this.maxPoint     : %s", this.maxPoint);
-            // console.log("newPoint          : %s", newPoint);
-
-            // this._touchAfter({
-            //     moved         : newPoint !== _this.currentPoint,
-            //     originalPoint : _this.currentPoint,
-            //     newPoint      : newPoint,
-            //     cancelled     : false
-            // });
             this._touchAfter();
-
-            // console.log("@@@ newPoint: %s", newPoint);
             this.moveToPoint(newPoint);
         },
         _click: function (event) {
             event.stopPropagation();
             event.preventDefault();
         },
-        // _touchAfter: function (params) {
         _touchAfter: function () {
             var _this = this;
 
@@ -801,25 +732,15 @@ Flickable = (function () {
                 removeListener(_this.el, "click", _this, true);
             }, 200);
 
-            // console.log("_touchAfter");
-
-            // triggerEvent(this.el, "fltouchend", true, false, params);
             triggerEvent(this.el, "fltouchend", true, false);
         },
         _setX: function (x, duration) {
             x        = parseInt(x, 10);
             duration = duration || this.opts.duration;
-            
+
             this.currentX = x;
 
             if (support.cssAnimation && !userAgent.isLegacy) {
-                // console.log("x: %s", x);
-                // console.log("######################");
-                // console.log("this.el.style[stashData.transform]: %s", this.el.style[stashData.transform]);
-                // console.log("getTranslate(x): %s", getTranslate(x));
-                // console.log("######################");
-
-                // this.el.style[stashData.transform] = getTranslate(x * 2);
                 this.el.style[stashData.transform] = getTranslate(x);
             }
             else if (this.useJsAnimate) {
@@ -833,16 +754,12 @@ Flickable = (function () {
             var childElementWidth = width || getElementWidth(getFirstElementChild(this.el), true),
                 childElementCount = getChildElementCount(this.el);
 
-            // console.log("childElementWidth: %s", childElementWidth);
-            // console.log("childElementCount: %s", childElementCount);
-
             this.el.style.width = childElementWidth * childElementCount + "px";
         },
         _cloneElement: function () {
             var _this              = this,
                 childElement       = getChildElement(this.el),
                 childElementWidth  = getElementWidth(childElement[0], true),
-                // parentElementWidth = getElementWidth(this.el.parentNode, false, "offsetWidth");
                 parentElementWidth = this.el.parentNode.offsetWidth,
                 stashVisibleSize, i, l;
 
@@ -854,36 +771,12 @@ Flickable = (function () {
                     _this.el.insertBefore(lastElement.cloneNode(true), childElement[0]);
                     _this.el.appendChild(firstElement.cloneNode(true));
                 }
-
-                // if (lastElement) {
-                //     _this.el.insertBefore(lastElement.cloneNode(true), childElement[0]);
-                // }
-                // if (firstElement) {
-                //     _this.el.appendChild(firstElement.cloneNode(true));
-                // }
-                // if (firstElement) {
-                //     _this.el.appendChild(firstElement.cloneNode(true));
-                //     // insertedCount++;
-                // }
             }
 
-            // console.log(this.el.parentNode.offsetWidth);
-            // console.log(parentElementWidth);
-            // console.log(childElementWidth);
             this.visibleSize  = Math.round(parentElementWidth / childElementWidth) + 1;
-            // this.visibleSize  = this.visibleSize < this.beforeChildElementCount ? this.visibleSize : this.beforeChildElementCount;
             stashVisibleSize  = this.beforeChildElementCount < this.visibleSize ? this.beforeChildElementCount : this.visibleSize;
 
-            // this.visibleSize =  Math.min(this.visibleSize, this.beforeChildElementCount);
-            // this.visibleSize = Math.min(this.visibleSize > this.beforeChildElementCount);
-
-            // console.log("this.el.parentNode: %s", this.el.parentNode);
-            // console.log("parentElementWidth: %s", parentElementWidth);
-            // console.log("childElementWidth: %s", childElementWidth);
-            // console.log("this.visibleSize: %s", this.visibleSize);
-
             i = 0;
-            // l = this.visibleSize;
             l = stashVisibleSize;
 
             for (; l; i++, l--) {
@@ -893,11 +786,7 @@ Flickable = (function () {
             this.afterChildElementCount = getChildElementCount(this.el);
 
             if (!this.opts.defaultPoint) {
-                // this.currentPoint = insertedCount > this.visibleSize ? insertedCount - this.visibleSize : this.visibleSize;
-                // this.currentPoint = Math.min(this.visibleSize, this.insertBeforeCount);
-                // this.currentPoint = this.visibleSize;
                 this.currentPoint = stashVisibleSize;
-                // this.currentPoint = this.visibleSize - this.beforeChildElementCount;
             }
         },
         _loop: function () {
@@ -907,42 +796,14 @@ Flickable = (function () {
                 childElementCount       = getChildElementCount(this.el),
                 transitionEndEventNames = getTransitionEndEventNames(),
                 hasTransitionEndEvents  = transitionEndEventNames.length,
-                // borderSize              = this.visibleSize < this.beforeChildElementCount ? this.beforeChildElementCount : this.visibleSize,
                 borderSize              = this.visibleSize < this.beforeChildElementCount ? this.visibleSize : this.beforeChildElementCount,
                 timerId;
 
-            // console.log("#################################################");
-            // console.log("this.currentPoint       : %s", this.currentPoint);
-            // console.log("this.maxPoint           : %s", this.maxPoint);
-            // console.log("this.visibleSize        : %s", this.visibleSize);
-            // console.log("beforeChildElementCount : %s", this.beforeChildElementCount);
-            // console.log("afterChildElementCount  : %s", this.afterChildElementCount);
-            // // console.log(this.beforeChildElementCount % 2);
-            // console.log("borderSize              : %s", borderSize);
-
             function loopFunc() {
-                // console.log("this.currentPoint: %s", _this.currentPoint);
-
-                // if (_this.currentPoint < _this.visibleSize) {
                 if (_this.currentPoint < borderSize) {
-                    // console.log("### back loop");
-
-                    // console.log("this.visibleSize:             %s", _this.visibleSize);
-                    // console.log("this.beforeChildElementCount: %s", _this.beforeChildElementCount);
-                    // console.log("this.currentPoint:            %s", _this.currentPoint);
-
-                    // console.log("borderSize: %s", borderSize);
-                    // console.log(_this.currentPoint + _this.beforeChildElementCount);
-
-                    // _this.moveToPoint(_this.currentPoint + borderSize, 0);
                     _this.moveToPoint(_this.currentPoint + _this.beforeChildElementCount, 0);
                 }
-                // else if (_this.currentPoint > (_this.maxPoint - _this.visibleSize)) {
                 else if (_this.currentPoint > (_this.maxPoint - borderSize)) {
-                //     // console.log("### next loop");
-                //     // console.log(_this.currentPoint - _this.beforeChildElementCount);
-
-                    // _this.moveToPoint(_this.currentPoint - borderSize, 0);
                     _this.moveToPoint(_this.currentPoint - _this.beforeChildElementCount, 0);
                 }
             }
